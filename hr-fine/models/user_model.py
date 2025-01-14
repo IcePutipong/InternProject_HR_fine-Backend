@@ -77,7 +77,7 @@ class ContactInfo(Base):
     personal_email = Column(String(100), nullable=True)
     line_id = Column(String(50), nullable=False)
 
-    user = relationship("Users", back_populates="contact_info")
+    user = relationship("Users", back_populates="contact_info", foreign_keys=[emp_id])
 
 class HiringInfo(Base):
     __tablename__ = "hiring_info"

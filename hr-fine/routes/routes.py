@@ -22,7 +22,7 @@ router = APIRouter(
 
 
 #### Auth SERVICE
-@router.post("/auth/addUser", tags=["Auth"])
+@router.post("/auth/addUser", dependencies=[Depends(JWTBearer())], tags=["Auth"])
 def register_user_endpoint(user: UserRegister, session: Session=Depends(get_session)):
     return auth_service.register_user(user, session)
 
@@ -39,7 +39,7 @@ def change_password_endpoint(request: ChangePassword, session: Session=Depends(g
     user_id = current_user["sub"]
     return auth_service.change_password(user_id,request, session)
 
-@router.post("/auth/change-temp-password", tags=["Auth"])
+@router.post("/auth/change-temp-password", dependencies=[Depends(JWTBearer())], tags=["Auth"])
 def change_temp_password_endpoint(emp_id: str, new_password: str, session: Session = Depends(get_session)):
     return auth_service.change_temporary_password(emp_id, new_password, session)
 
@@ -48,95 +48,95 @@ def refresh_token_endpoint(refresh_token: str, session: Session= Depends(get_ses
     return auth_service.access_refresh_token(refresh_token, session)
 
 ####User SERVICE
-@router.post("/user/add-user-info", tags=["User Info"])
+@router.post("/user/add-user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
 def create_user_info_endpoint(request: CreateUserInfoData, db: Session = Depends(get_session)):
     return create_user_info(request, db)
 
-@router.post("/user/add-hiring-info", tags=["Hiring Info"])
+@router.post("/user/add-hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
 def create_hiring_info_endpoint(request: CreateHiringInfo, db: Session = Depends(get_session)):
     return create_hiring_info(request, db)
 
-@router.post("/user/add-payment-info", tags=["Payment Info"])
+@router.post("/user/add-payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
 def create_payment_info_endpoint(request: CreatePaymentinfo, db: Session= Depends(get_session)):
     return create_payment_info(request, db)
 
-@router.get("/user/user-info", tags=["User Info"])
+@router.get("/user/user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
 def get_user_info_endpoint(emp_id: str, db: Session = Depends(get_session)):
     return get_user_info(emp_id, db)
 
-@router.get("/user/hiring-info", tags=["Hiring Info"])
+@router.get("/user/hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
 def get_hiring_info_endpoint(emp_id: str, db: Session =Depends(get_session)):
     return get_hiring_info(emp_id, db)
 
-@router.get("/user/payment-info", tags=["Payment Info"])
+@router.get("/user/payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
 def get_payment_info_endpoint(emp_id: str, db: Session = Depends(get_session)):
     return get_payment_info(emp_id, db)
 
-@router.put("/user/edit-user-info", tags=["User Info"])
+@router.put("/user/edit-user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
 def edit_user_info_endpoint(request: EditUserInfoData, db: Session = Depends(get_session)):
     return edit_user_info(request, db)
 
-@router.put("/user/edit-hiring-info", tags=["Hiring Info"])
+@router.put("/user/edit-hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
 def edit_hiring_info_endpoint(request: EditHiringInfo, db: Session = Depends(get_session)):
     return edit_hiring_info(request, db)
 
-@router.put("/user/edit-payment-info", tags=["Payment Info"])
+@router.put("/user/edit-payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
 def edit_payment_info_endpoint(request: EditPaymentinfo, db: Session= Depends(get_session)):
     return edit_payment_info(request,db)
 
-@router.post("/user/submit-all-user-info", tags=["Submit Info"])
+@router.post("/user/submit-all-user-info", dependencies=[Depends(JWTBearer())], tags=["Submit Info"])
 def submit_all_user_info_endpoint(request: SubmitInfoForm, db: Session = Depends(get_session)):
     return submit_all_user_info(request, db)
 
 ###Optional Data
-@router.post("/optional/add-company", tags=["Optional Data"])
+@router.post("/optional/add-company", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_company_endpoint(request: AddCompany, db: Session = Depends(get_session)):
     return add_company(request, db)
 
-@router.post("/optional/add-comployee-type", tags=["Optional Data"])
+@router.post("/optional/add-comployee-type", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_employee_type_endpoint(request: AddEmployeeType, db: Session= Depends(get_session)):
     return add_employee_type(request, db)   
 
-@router.post("/optional/add-contract-type", tags=["Optional Data"])
+@router.post("/optional/add-contract-type", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_contract_type_endpoint(request: AddContractType, db: Session= Depends(get_session)):
     return add_contract_type(request, db)   
 
-@router.post("/optional/add-department", tags=["Optional Data"])
+@router.post("/optional/add-department", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_department_endpoint(request: AddDepartment, db: Session= Depends(get_session)):
     return add_department(request, db)   
 
-@router.post("/optional/add-position", tags=["Optional Data"])
+@router.post("/optional/add-position", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_position_endpoint(request: AddPosition, db: Session= Depends(get_session)):
     return add_position(request, db)
 
-@router.post("/optional/add-working-status", tags=["Optional Data"])
+@router.post("/optional/add-working-status", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_working_status_endpoint(request: AddWorkingStatus, db: Session= Depends(get_session)):
     return add_working_status(request, db)
 
-@router.put("/optional/edit_position", response_model=dict, tags=["Optional Data"])
+@router.put("/optional/edit_position", dependencies=[Depends(JWTBearer())], response_model=dict, tags=["Optional Data"])
 def edit_position_endpoint(request: EditPosition, db: Session = Depends(get_session)):
     return edit_position(request, db)
 
-@router.get("/optional/companies", response_model=List[FetchCompany], tags=["Optional Data"])
+@router.get("/optional/companies", dependencies=[Depends(JWTBearer())], response_model=List[FetchCompany], tags=["Optional Data"])
 def fetch_company_endpoint(db: Session =Depends(get_session)):
     return fetch_company(db)
 
-@router.get("/optional/employee-types", response_model=List[FetchEmployeeType], tags=["Optional Data"])
+@router.get("/optional/employee-types", dependencies=[Depends(JWTBearer())], response_model=List[FetchEmployeeType], tags=["Optional Data"])
 def fetch_employee_type_endpoint(db: Session =Depends(get_session)):
     return fetch_emp_type(db)
 
-@router.get("/optional/contract-types", response_model=List[FetchContractType], tags=["Optional Data"])
+@router.get("/optional/contract-types", dependencies=[Depends(JWTBearer())], response_model=List[FetchContractType], tags=["Optional Data"])
 def fetch_contract_type_endpoint(db: Session =Depends(get_session)):
     return fetch_contract(db)
 
-@router.get("/optional/departments", response_model=List[FetchDepartment], tags=["Optional Data"])
+@router.get("/optional/departments", dependencies=[Depends(JWTBearer())], response_model=List[FetchDepartment], tags=["Optional Data"])
 def fetch_department_endpoint(db: Session =Depends(get_session)):
     return fetch_department(db)
 
-@router.get("/optional/working-status", response_model=List[FetchWorkingStatus], tags=["Optional Data"])
+@router.get("/optional/working-status", dependencies=[Depends(JWTBearer())], response_model=List[FetchWorkingStatus], tags=["Optional Data"])
 def fetch_working_status_endpoint(db: Session =Depends(get_session)):
     return fetch_working_status(db)
 
-@router.get("/optional/positions", response_model=List[FetchPosition], tags=["Optional Data"])
+@router.get("/optional/positions", dependencies=[Depends(JWTBearer())], response_model=List[FetchPosition], tags=["Optional Data"])
 def fetch_position_endpoint(db: Session= Depends(get_session)):
     return fetch_positions(db)
