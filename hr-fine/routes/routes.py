@@ -11,9 +11,9 @@ from schemas.user_schema import EditUserInfoData,EditPaymentinfo,EditHiringInfo
 from schemas.user_schema import CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, SubmitInfoForm
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus
 
-from services.user_service import edit_hiring_info, edit_payment_info,edit_user_info    
-from services.user_service import get_hiring_info, get_payment_info, get_user_info, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
-from services.user_service import create_hiring_info,create_payment_info,create_user_info, submit_all_user_info
+from services.user_service import create_user_payment_info, edit_hiring_info, edit_user_info    
+from services.user_service import get_hiring_info, get_user_info, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
+from services.user_service import create_hiring_info, create_user_info, submit_all_user_info
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, edit_position, add_working_status
 
 router = APIRouter(
@@ -58,7 +58,7 @@ def create_hiring_info_endpoint(request: CreateHiringInfo, db: Session = Depends
 
 @router.post("/user/add-payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
 def create_payment_info_endpoint(request: CreatePaymentinfo, db: Session= Depends(get_session)):
-    return create_payment_info(request, db)
+    return create_user_payment_info(request, db)
 
 @router.get("/user/user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
 def get_user_info_endpoint(emp_id: str, db: Session = Depends(get_session)):

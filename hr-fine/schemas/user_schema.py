@@ -71,7 +71,7 @@ class CreateHiringInfo(BaseUserSchema):
 
 class CreatePaymentinfo(BaseUserSchema):
     payment_type: str
-    account_no: str
+    account_no: Optional[str] = None
     bank: Optional[str] = None
     account_name: Optional[str] = None
 
@@ -97,13 +97,13 @@ class CreateDeductionInfo(BaseModel):
     other_percentage: Optional[float]
 
 class CreateUserPayment(BaseModel):
-    deduction_info: CreateDeductionInfo
     payment_info: CreatePaymentinfo
+    deduction_info: CreateDeductionInfo
 
 class SubmitInfoForm(BaseModel):
     user_info: CreateUserInfoData
     hiring_info: CreateHiringInfo
-    payment_info: CreatePaymentinfo 
+    user_payment_info: CreateUserPayment 
 
 class EditPersonalInfo(BaseUserSchema):
     nation_id: Optional[str] = None

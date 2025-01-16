@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from models.user_model import Company, ContractType, Department, EmployeeType, Position, PersonalInfo, AddressInfo, RegistrationAddress, PaymentInfo, HiringInfo, ContactInfo, WorkingStatus
-from schemas.user_schema import AddressInfoRes, ContactInfoRes, CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, EditHiringInfo, EditPaymentinfo, EditUserInfoData, HiringInfoRes, PaymentInfoRes, PersonalInfoRes, RegAddressInfoRes, SubmitInfoForm, UserInfoRes
+from models.user_model import Company, ContractType, DeductionInfo, Department, EmployeeType, Position, PersonalInfo, AddressInfo, RegistrationAddress, PaymentInfo, HiringInfo, ContactInfo, WorkingStatus
+from schemas.user_schema import AddressInfoRes, ContactInfoRes, CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, CreateUserPayment, EditHiringInfo, EditPaymentinfo, EditUserInfoData, HiringInfoRes, PaymentInfoRes, PersonalInfoRes, RegAddressInfoRes, SubmitInfoForm, UserInfoRes
 from schemas.optional_schema import FetchPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchWorkingStatus
 from sqlalchemy.orm import Session, joinedload
 from constants import ID_NOT_FOUND
@@ -208,10 +208,11 @@ def get_hiring_info(emp_id: str, db: Session = Depends(get_session)) -> HiringIn
     
     return HiringInfoRes.model_validate(hiring_info)
 
-def create_payment_info(request:CreatePaymentinfo, db: Session=Depends(get_session)):
-    user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found, can't create payment info.")
+
+def create_user_payment_info(request: CreateUserPayment, db: Session=Depends(get_session)):
+    user = db.query(Users).filter(Users.emp_id == request.payment_info.emp_id).first()
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found, can't create user info.")
     
     emp_id = user.emp_id
 
@@ -225,39 +226,88 @@ def create_payment_info(request:CreatePaymentinfo, db: Session=Depends(get_sessi
     )
     db.add(new_payment_info)
 
+    new_deduction_info = DeductionInfo(
+        emp_id=emp_id,
+        deduct_social_security=request.deduct_social_security,
+        social_security_company=request.social_security_company,
+        social_security_emp_percentage=request.social_security_emp_percentage,
+        social_security_company_percentage=request.social_security_company_percentage,
+        enroll_date=request.enroll_date,
+        pri_healthcare=request.pri_healthcare,
+        sec_healthcare=request.sec_healthcare,
+        provide_fund_percentage=request.provide_fund_percentage,
+        fee=request.fee,
+        
+        has_social_security=request.has_social_security,
+        establishment_location=request.establishment_location,
+        deduct_SLF_IC=request.deduct_SLF_IC,
+        pay_SLF_IC=request.pay_SLF_IC,
+
+        has_other_details=request.has_other_details,
+        other_details=request.other_details,
+        other_expenses=request.other_expenses,
+        other_percentage=request.other_percentage,
+    )
+    db.add(new_deduction_info)
     db.commit()
     db.refresh(new_payment_info)
+    db.refresh(new_deduction_info)
+
     return{
-        "payment_info": new_payment_info
+        "payment_info": new_payment_info,
+        "deduction_info": new_deduction_info,
     }
 
-def edit_payment_info(request: EditPaymentinfo, db: Session = Depends(get_session)):
-    user = db.query(Users). filter(Users.emp_id == request.emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-
-    payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == user.emp_id).first()
+# def create_payment_info(request:CreatePaymentinfo, db: Session=Depends(get_session)):
+#     user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail="User not found, can't create payment info.")
     
-    update_model_data(payment_info, request.model_dump(exclude_unset=True))
+#     emp_id = user.emp_id
 
-    db.commit()
-    db.refresh(payment_info)
+#     new_payment_info = PaymentInfo(
+#         emp_id=emp_id,
+#         payment_period=request.payment_period,
+#         payment_type=request.payment_type,
+#         account_no=request.account_no,
+#         bank=request.bank,
+#         account_name=request.account_name
+#     )
+#     db.add(new_payment_info)
 
-    return {
-        "message": "Payment Information updated successfully.",
-        "payment_info": payment_info
-    }
+#     db.commit()
+#     db.refresh(new_payment_info)
+#     return{
+#         "payment_info": new_payment_info
+#     }
 
-def get_payment_info(emp_id: str, db: Session = Depends(get_session)) -> PaymentInfoRes:
-    user = db.query(Users).filter(Users.emp_id == emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
+# def edit_payment_info(request: EditPaymentinfo, db: Session = Depends(get_session)):
+#     user = db.query(Users). filter(Users.emp_id == request.emp_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
+
+#     payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == user.emp_id).first()
     
-    payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == emp_id).first()
-    if not payment_info:
-        raise  HTTPException(status_code=404, detail="Payment Information not found for this User.")
+#     update_model_data(payment_info, request.model_dump(exclude_unset=True))
+
+#     db.commit()
+#     db.refresh(payment_info)
+
+#     return {
+#         "message": "Payment Information updated successfully.",
+#         "payment_info": payment_info
+#     }
+
+# def get_payment_info(emp_id: str, db: Session = Depends(get_session)) -> PaymentInfoRes:
+#     user = db.query(Users).filter(Users.emp_id == emp_id).first()
+#     if not user:
+#         raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
     
-    return PaymentInfoRes.model_validate(payment_info)
+#     payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == emp_id).first()
+#     if not payment_info:
+#         raise  HTTPException(status_code=404, detail="Payment Information not found for this User.")
+    
+#     return PaymentInfoRes.model_validate(payment_info)
 
 def submit_all_user_info(request: SubmitInfoForm, db: Session = Depends(get_session)):
     try:

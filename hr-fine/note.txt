@@ -3,4 +3,4 @@ python -m alembic -c database/alembic.ini revision --autogenerate -m "Initial mi
 alembic upgrade head
 
 run: 
-python -m uvicorn app:app --host 0.0.0.0 --reload
+python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
