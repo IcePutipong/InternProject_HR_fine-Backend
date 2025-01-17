@@ -181,7 +181,7 @@ def create_hiring_info(request: CreateHiringInfo, db: Session=Depends(get_sessio
 
 
 def edit_hiring_info(request: EditHiringInfo, db: Session = Depends(get_session)):
-    user = db.query(Users). filter(Users.emp_id == request.emp_id).first()
+    user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
     if not user:
         raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
     

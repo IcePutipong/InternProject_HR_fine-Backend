@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, ForeignKey, Float, Double
 from database.db import Base
 from sqlalchemy.orm import relationship
+from models.project_model import ProjectDetail
 
 AUTH_USER_EMP_ID = "users.emp_id"
 
@@ -24,6 +25,8 @@ class PersonalInfo(Base):
     date_birth = Column(Date, nullable=True)
 
     user = relationship("Users", back_populates="personal_info")
+    managed_projects = relationship("ProjectDetail", back_populates="manager")
+
 
 class AddressInfo(Base):
     __tablename__ = "address"

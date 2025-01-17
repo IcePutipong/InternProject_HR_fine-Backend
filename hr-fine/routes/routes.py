@@ -10,11 +10,13 @@ from typing import List
 from schemas.user_schema import EditUserInfoData,EditPaymentinfo,EditHiringInfo
 from schemas.user_schema import CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, SubmitInfoForm
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus
+from schemas.client_schema import ClientRes, CreateClient, EditClient
 
 from services.user_service import create_user_payment_info, edit_hiring_info, edit_user_info    
 from services.user_service import get_hiring_info, get_user_info, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.user_service import create_hiring_info, create_user_info, submit_all_user_info
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, edit_position, add_working_status
+from services.client_service import create_client_info, get_client_info, edit_client_info
 
 router = APIRouter(
     prefix="/hr-fine",
@@ -93,7 +95,7 @@ def submit_all_user_info_endpoint(request: SubmitInfoForm, db: Session = Depends
 def add_company_endpoint(request: AddCompany, db: Session = Depends(get_session)):
     return add_company(request, db)
 
-@router.post("/optional/add-comployee-type", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
+@router.post("/optional/add-employee-type", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
 def add_employee_type_endpoint(request: AddEmployeeType, db: Session= Depends(get_session)):
     return add_employee_type(request, db)   
 
@@ -140,3 +142,16 @@ def fetch_working_status_endpoint(db: Session =Depends(get_session)):
 @router.get("/optional/positions", dependencies=[Depends(JWTBearer())], response_model=List[FetchPosition], tags=["Optional Data"])
 def fetch_position_endpoint(db: Session= Depends(get_session)):
     return fetch_positions(db)
+
+### Client
+@router.post("/client/add-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
+def add_client_endpoint(client: CreateClient, session: Session=Depends(get_session)):
+    return create_client_info(client, session)
+
+@router.put("/client/edit-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
+def edit_client_endpoint(request: EditClient, db: Session=Depends(get_session)):
+    return edit_client_info(request, db)
+
+@router.get("/client/fetch-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
+def fetch_client_endpoint(client_id:int, db: Session= Depends(get_session)):
+    return get_client_info(client_id, db)

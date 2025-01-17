@@ -1,6 +1,6 @@
 update migrations:
 python -m alembic -c database/alembic.ini revision --autogenerate -m "Initial migration" 
-alembic upgrade head
+python -m alembic -c database/alembic.ini upgrade head    
 
 run: 
 python -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
