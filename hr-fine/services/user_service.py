@@ -19,7 +19,6 @@ def create_user_info(request: CreateUserInfoData, db: Session=Depends(get_sessio
         raise HTTPException(status_code=404, detail="User not found, can't create user info.")
     
     emp_id = user.emp_id
-    company_email = user.email
 
     new_personal_info = PersonalInfo(
         emp_id=emp_id,
@@ -74,8 +73,8 @@ def create_user_info(request: CreateUserInfoData, db: Session=Depends(get_sessio
 
     new_contact_info = ContactInfo(
         emp_id=emp_id,
-        company_email=company_email,
-        personal_email=request.contact_info.personal_email,
+        email=request.contact_info.email,
+        tel =request.contact_info.tel,
         line_id=request.contact_info.line_id
     )
     db.add(new_contact_info)
@@ -218,7 +217,6 @@ def create_user_payment_info(request: CreateUserPayment, db: Session=Depends(get
 
     new_payment_info = PaymentInfo(
         emp_id=emp_id,
-        payment_period=request.payment_period,
         payment_type=request.payment_type,
         account_no=request.account_no,
         bank=request.bank,

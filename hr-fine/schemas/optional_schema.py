@@ -77,4 +77,17 @@ class EditPosition(BaseModel):
     position: str
     department_id: int
 
+class AddProjectType(BaseModel):
+    project_types: str
+    project_type_code: str
+
+class ResProjectType(BaseModel):
+    id: int 
+    project_types: str
+    project_type_code: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
 

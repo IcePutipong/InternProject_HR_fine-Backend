@@ -10,10 +10,11 @@ class Client(Base):
     client_type = Column(String(20), nullable=False)
     client_name =Column(String(20), nullable=False)
     client_code = Column(String(10), nullable=False)
+    client_project_code = Column(String(5), nullable=False)
     client_email = Column(String(30), nullable=False)
     contact_address = Column(String(1000), nullable=False)
     client_tel = Column(String(15), nullable=False)
 
-    project_details = relationship("ProjectDetail", back_populates="client")
+    project_details = relationship("ProjectDetails", back_populates="client")
 
 

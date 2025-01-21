@@ -169,7 +169,6 @@ class EditHiringInfo(BaseUserSchema):
     manager: Optional[str] = None
 
 class EditPaymentinfo(BaseUserSchema):
-    payment_period: Optional[date] = None
     payment_type: Optional[str] = None
     account_no: Optional[str] = None
     bank: Optional[str] = None
@@ -251,7 +250,6 @@ class UserInfoRes(BaseModel):
     }
 
 class PaymentInfoRes(BaseModel):
-    payment_period: Optional[date]
     payment_type: Optional[str]
     account_no: Optional[str]
     bank: Optional[str]

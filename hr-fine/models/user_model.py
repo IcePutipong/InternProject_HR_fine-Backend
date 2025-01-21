@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, ForeignKey, Float, Double
 from database.db import Base
 from sqlalchemy.orm import relationship
-from models.project_model import ProjectDetail
+from models.project_model import ProjectDetails
 
 AUTH_USER_EMP_ID = "users.emp_id"
 
@@ -12,7 +12,6 @@ class PersonalInfo(Base):
     emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
 
     nation_id = Column(String(50), nullable=False)
-    exp_card_date = Column(String(50), nullable=False)
 
     thai_name = Column(String(100), nullable=False)
     eng_name = Column(String(100), nullable=False)
@@ -25,7 +24,7 @@ class PersonalInfo(Base):
     date_birth = Column(Date, nullable=True)
 
     user = relationship("Users", back_populates="personal_info")
-    managed_projects = relationship("ProjectDetail", back_populates="manager")
+    managed_projects = relationship("ProjectDetails", back_populates="manager")
 
 
 class AddressInfo(Base):
@@ -75,9 +74,9 @@ class ContactInfo(Base):
     __tablename__ = "contact_info"
     id = Column(Integer, primary_key=True, index= True)
     emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
-    company_email = Column(String(100), ForeignKey("users.email"), nullable= False)
+    email = Column(String(100), ForeignKey("users.email"), nullable= False)
 
-    personal_email = Column(String(100), nullable=True)
+    tel = Column(String(15), nullable=False)
     line_id = Column(String(50), nullable=False)
 
     user = relationship("Users", back_populates="contact_info", foreign_keys=[emp_id])
@@ -106,7 +105,6 @@ class PaymentInfo(Base):
     id = Column(Integer, primary_key=True, index= True)
     emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
 
-    payment_period = Column(Date, nullable=False)
     payment_type = Column(String(50), nullable=False)
     account_no = Column(String(20), nullable=True)
     bank = Column(String(50), nullable=True)
