@@ -9,14 +9,16 @@ from services import auth_service
 from typing import List
 from schemas.user_schema import EditUserInfoData,EditPaymentinfo,EditHiringInfo
 from schemas.user_schema import CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, SubmitInfoForm
-from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus
+from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientRes, CreateClient, EditClient
+from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes
 
 from services.user_service import create_user_payment_info, edit_hiring_info, edit_user_info    
 from services.user_service import get_hiring_info, get_user_info, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.user_service import create_hiring_info, create_user_info, submit_all_user_info
-from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, edit_position, add_working_status
+from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type
 from services.client_service import create_client_info, get_client_info, edit_client_info
+from services.project_service import generate_project_code
 
 router = APIRouter(
     prefix="/hr-fine",
@@ -115,6 +117,10 @@ def add_position_endpoint(request: AddPosition, db: Session= Depends(get_session
 def add_working_status_endpoint(request: AddWorkingStatus, db: Session= Depends(get_session)):
     return add_working_status(request, db)
 
+@router.post("/optional/add-project-types", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
+def add_project_types(request: AddProjectType, db: Session= Depends(get_session)):
+    return create_project_type(request, db)
+
 @router.put("/optional/edit_position", dependencies=[Depends(JWTBearer())], response_model=dict, tags=["Optional Data"])
 def edit_position_endpoint(request: EditPosition, db: Session = Depends(get_session)):
     return edit_position(request, db)
@@ -143,6 +149,10 @@ def fetch_working_status_endpoint(db: Session =Depends(get_session)):
 def fetch_position_endpoint(db: Session= Depends(get_session)):
     return fetch_positions(db)
 
+@router.get("/optional/project-types", dependencies=[Depends(JWTBearer())], response_model=List[ResProjectType], tags=["Optional Data"])
+def response_project_types(db: Session = Depends(get_session)):
+    return response_project_type(db)
+
 ### Client
 @router.post("/client/add-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
 def add_client_endpoint(client: CreateClient, session: Session=Depends(get_session)):
@@ -155,3 +165,8 @@ def edit_client_endpoint(request: EditClient, db: Session=Depends(get_session)):
 @router.get("/client/fetch-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
 def fetch_client_endpoint(client_id:int, db: Session= Depends(get_session)):
     return get_client_info(client_id, db)
+
+###Project
+@router.post("/project/generate_projecet_code", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends(get_session)):
+    return generate_project_code(request, db)

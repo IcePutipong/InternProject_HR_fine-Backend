@@ -6,10 +6,12 @@ from models.client_model import Client
 
 PROJECT_ID = "project_details.project_id"
 
-class ProjectDetail(Base):
+class ProjectDetails(Base):
     __tablename__ = "project_details"
     project_id = Column(Integer, primary_key=True, index=True)
 
+
+    project_type = Column(String(20), nullable=False)
     project_code = Column(String(10), nullable=False)
     project_name = Column(String(30), nullable=False)
     project_contract_no = Column(String(20), nullable=False)
@@ -50,3 +52,11 @@ class ProjectPlan(Base):
     deli_duration = Column(Date, nullable=False)
     deli_date = Column(Date, nullable=False)
     deli_details = Column(String(100), nullable=True)
+
+class ProjectType(Base):
+    __tablename__ = "project_types"
+    id = Column(Integer, primary_key=True, index=True)
+
+    project_types = Column(String(20), nullable=False)
+    project_type_code = Column(String(5), nullable=False)
+    

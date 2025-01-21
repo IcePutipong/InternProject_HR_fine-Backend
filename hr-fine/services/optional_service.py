@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from schemas.optional_schema import (
     AddCompany, AddEmployeeType, AddContractType, AddDepartment, AddPosition, AddWorkingStatus
 )
+from schemas.optional_schema import AddProjectType
+
+from models.project_model import ProjectType
 from models.user_model import Company, EmployeeType, ContractType, Department, Position, WorkingStatus
 from database.db import get_session
 
@@ -139,3 +142,20 @@ def edit_position(request: AddPosition, db: Session = Depends(get_session)):
         "position": position.position,
         "department_id": position.department_id
     }
+
+def create_project_type(request: AddProjectType, db: Session=Depends(get_session)):
+    new_project_types = ProjectType(
+        project_types = request.project_types,
+        project_type_code = request.project_type_code,
+    )
+    db.add(new_project_types)
+    db.commit()
+    db.refresh(new_project_types)
+
+    return {
+        "project_types": new_project_types,
+    }
+
+def response_project_type(db: Session = Depends(get_session)):
+    project_types = db.query(ProjectType).all()
+    return [{"id": project_type.id, "project_types": project_type.project_types, "project_type_code": project_type.project_type_code } for project_type in project_types]
