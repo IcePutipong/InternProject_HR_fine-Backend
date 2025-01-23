@@ -9,7 +9,7 @@ AUTH_USER_EMP_ID = "users.emp_id"
 class PersonalInfo(Base):
     __tablename__ = "personal_info"
     id = Column(Integer, primary_key=True, index=True)
-    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
 
     nation_id = Column(String(50), nullable=False)
 
@@ -30,7 +30,7 @@ class PersonalInfo(Base):
 class AddressInfo(Base):
     __tablename__ = "address"
     id = Column(Integer, primary_key=True, index= True)
-    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
     house_no = Column(String(20), nullable=False)
     village_no = Column(Integer, nullable=False)
     sub_district = Column(String(50), nullable= False)
@@ -51,7 +51,7 @@ class AddressInfo(Base):
 class RegistrationAddress(Base):
     __tablename__ = "registration_address"
     id = Column(Integer, primary_key=True, index= True)
-    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
 
     house_no = Column(String(20), nullable=False)
     village_no = Column(Integer, nullable=False)
@@ -73,7 +73,7 @@ class RegistrationAddress(Base):
 class ContactInfo(Base):
     __tablename__ = "contact_info"
     id = Column(Integer, primary_key=True, index= True)
-    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
     email = Column(String(100), ForeignKey("users.email"), nullable= False)
 
     tel = Column(String(15), nullable=False)
@@ -103,7 +103,7 @@ class HiringInfo(Base):
 class PaymentInfo(Base):
     __tablename__ = "payment_info"
     id = Column(Integer, primary_key=True, index= True)
-    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
 
     payment_type = Column(String(50), nullable=False)
     account_no = Column(String(20), nullable=True)
@@ -115,7 +115,7 @@ class PaymentInfo(Base):
 class DeductionInfo(Base):
     __tablename__ = "deduction_info"
     id = Column(Integer, primary_key=True, index=True)
-    emp_id = Column(String(50), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
+    emp_id = Column(String(50), ForeignKey(AUTH_USER_EMP_ID), nullable=False, unique=True)
 
     deduct_social_security = Column(Boolean, nullable=False)
     social_security_company = Column(String(50), nullable=True)

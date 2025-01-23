@@ -7,7 +7,6 @@ class BaseUserSchema(BaseModel):
 
 class CreatePersonalInfo(BaseUserSchema):
     nation_id: str = Field(..., pattern=r"^\d+$")
-    exp_card_date: str
     thai_name: str
     eng_name: str
     thai_nickname: str
@@ -18,8 +17,9 @@ class CreatePersonalInfo(BaseUserSchema):
     date_birth: Optional[date] = None
 
 class CreateContactInfo(BaseUserSchema):
-    personal_email: Optional[EmailStr] = None
+    email: Optional[EmailStr] = None
     line_id: str
+    tel: str
 
 class CreateAddressInfo(BaseUserSchema):
     house_no: str
@@ -101,6 +101,7 @@ class CreateUserPayment(BaseModel):
     deduction_info: CreateDeductionInfo
 
 class SubmitInfoForm(BaseModel):
+    emp_id: str
     user_info: CreateUserInfoData
     hiring_info: CreateHiringInfo
     user_payment_info: CreateUserPayment 

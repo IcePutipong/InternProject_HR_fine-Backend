@@ -10,7 +10,7 @@ from typing import List
 from schemas.user_schema import EditUserInfoData,EditPaymentinfo,EditHiringInfo
 from schemas.user_schema import CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, SubmitInfoForm
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
-from schemas.client_schema import ClientRes, CreateClient, EditClient
+from schemas.client_schema import ClientRes, CreateClient, EditClient, GenerateClientCode
 from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes
 
 from services.user_service import create_user_payment_info, edit_hiring_info, edit_user_info    
@@ -158,6 +158,10 @@ def response_project_types(db: Session = Depends(get_session)):
 def add_client_endpoint(client: CreateClient, session: Session=Depends(get_session)):
     return create_client_info(client, session)
 
+@router.post("/client/generate-client-code", dependencies=[Depends(JWTBearer())], tags=["Client"])
+def gennerate_client_code(request: GenerateClientCode, db: Session=Depends(get_session)):
+    return generate_client_code(request, db)
+
 @router.put("/client/edit-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
 def edit_client_endpoint(request: EditClient, db: Session=Depends(get_session)):
     return edit_client_info(request, db)
@@ -167,6 +171,6 @@ def fetch_client_endpoint(client_id:int, db: Session= Depends(get_session)):
     return get_client_info(client_id, db)
 
 ###Project
-@router.post("/project/generate_projecet_code", dependencies=[Depends(JWTBearer())], tags=["Project"])
+@router.post("/project/generate-projecet-code", dependencies=[Depends(JWTBearer())], tags=["Project"])
 def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends(get_session)):
     return generate_project_code(request, db)

@@ -1,17 +1,21 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from schemas.client_schema import CreateClient, EditClient, ClientRes
+from schemas.client_schema import CreateClient, EditClient, ClientRes, GenerateClientCode
 from sqlalchemy.orm import Session, joinedload
 from models.client_model import Client
+from models.project_model import ProjectType
 from services.user_service import update_model_data
-
 
 def create_client_info(request: CreateClient, db: Session = Depends(get_session)):
     existing_client = db.query(Client).filter(Client.client_name == request.client_name).first()
     if existing_client:
-        raise HTTPException(status_code=404, detail="Client with this name Already Exist.")
+        raise HTTPException(status_code=400, detail=f"Client with {request.client_name} Already Exist.")
     
+    existing_client_code = db.query(Client).filter(Client.client_code == request.client_code).first()
+    if existing_client_code:
+        raise HTTPException(status_code=400, detail=f"Client code with {request.client_code} already exist pls try other code.")
+
     new_client_info = Client(
         client_type=request.client_type,
         client_name=request.client_name,
@@ -33,7 +37,7 @@ def create_client_info(request: CreateClient, db: Session = Depends(get_session)
     }
 
 def  edit_client_info(request: EditClient, db: Session =Depends(get_session)):
-    client = db.query(Client).filter(Client.client_code == request.client_code).first()
+    client = db.query(Client).filter(Client.client_id == request.client_id).first()
     if not client: 
         raise HTTPException(status_code=404, detail="Client not found in the database, Pls Check again.")
     

@@ -2,7 +2,6 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, ForeignKey, Float, Double
 from database.db import Base
 from sqlalchemy.orm import relationship
-from models.client_model import Client
 
 PROJECT_ID = "project_details.project_id"
 
@@ -59,4 +58,6 @@ class ProjectType(Base):
 
     project_types = Column(String(20), nullable=False)
     project_type_code = Column(String(5), nullable=False)
+
+    client_type = relationship("Client", back_populates="types")
     

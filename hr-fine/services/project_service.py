@@ -14,7 +14,7 @@ from schemas.optional_schema import AddProjectType
 def generate_project_code(request: GenerateProjectCode, db: Session = Depends(get_session)):
     try: 
         client = db.query(Client).filter(Client.client_name == request.client_name).one()
-        client_code = client.client_project_code
+        client_code = client.client_code
         client_project_type = client.client_type
     except NoResultFound:
         raise HTTPException(status_code=400, detail="Invalid client name or no client found")
