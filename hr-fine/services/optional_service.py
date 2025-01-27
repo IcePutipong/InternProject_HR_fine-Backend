@@ -1,11 +1,10 @@
 from fastapi import HTTPException, Depends
-from typing import Any, Dict
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List
+from sqlalchemy.orm import Session, joinedload
 from schemas.optional_schema import (
-    AddCompany, AddEmployeeType, AddContractType, AddDepartment, AddPosition, AddWorkingStatus
+    AddCompany, AddEmployeeType, AddContractType, AddDepartment, AddPosition, AddWorkingStatus, FetchDepartment, FetchPosition
 )
 from schemas.optional_schema import AddProjectType
-
 from models.project_model import ProjectType
 from models.user_model import Company, EmployeeType, ContractType, Department, Position, WorkingStatus
 from database.db import get_session
@@ -159,3 +158,41 @@ def create_project_type(request: AddProjectType, db: Session=Depends(get_session
 def response_project_type(db: Session = Depends(get_session)):
     project_types = db.query(ProjectType).all()
     return [{"id": project_type.id, "project_types": project_type.project_types, "project_type_code": project_type.project_type_code } for project_type in project_types]
+
+def fetch_company(db: Session = Depends(get_session)):
+    companies = db.query(Company).all()
+    return[{"id": company.id, "company": company.company} for company in companies]
+
+def fetch_emp_type(db: Session = Depends(get_session)):
+    employee_types = db.query(EmployeeType).all()
+    return [{"id": emp_type.id, "employee_type": emp_type.employee_type } for emp_type in employee_types]
+
+def fetch_contract(db: Session = Depends(get_session)):
+    contrac_types = db.query(ContractType).all()
+    return [{"id": contract_type.id, "contract_type": contract_type.contract_type} for contract_type in contrac_types] 
+
+def fetch_department(db: Session = Depends(get_session)):
+    departments = db.query(Department).options(joinedload(Department.positions)).all()
+
+    department_list = []
+    for department in departments:
+        position = [
+            FetchPosition.model_validate(position)
+            for position in department.positions if position.department_id is not None
+        ]
+        department_list.append(
+            FetchDepartment(
+                id = department.id,
+                department = department.department,
+                positions=position
+            )
+        )
+    return department_list
+
+def fetch_positions(db: Session = Depends(get_session)) -> List[FetchPosition]:
+    positions = db.query(Position).all()
+    return [FetchPosition.model_validate(position) for position in positions]
+
+def fetch_working_status(db: Session = Depends(get_session)):
+    worked_status = db.query(WorkingStatus).all()
+    return [{"id": working_status.id, "working_status": working_status.working_status} for working_status in worked_status]

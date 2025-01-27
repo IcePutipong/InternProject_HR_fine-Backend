@@ -7,16 +7,13 @@ from schemas.auth_schema import UserLogin, UserRegister, ChangePassword
 from services import auth_service
 
 from typing import List
-from schemas.user_schema import EditUserInfoData,EditPaymentinfo,EditHiringInfo
-from schemas.user_schema import CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, SubmitInfoForm
+from schemas.user_schema import SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientRes, CreateClient, EditClient, GenerateClientCode
 from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes
 
-from services.user_service import create_user_payment_info, edit_hiring_info, edit_user_info    
-from services.user_service import get_hiring_info, get_user_info, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
-from services.user_service import create_hiring_info, create_user_info, submit_all_user_info
-from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type
+from services.user_service import submit_all_user_data
+from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_info, edit_client_info
 from services.project_service import generate_project_code
 
@@ -52,45 +49,10 @@ def refresh_token_endpoint(refresh_token: str, session: Session= Depends(get_ses
     return auth_service.access_refresh_token(refresh_token, session)
 
 ####User SERVICE
-@router.post("/user/add-user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
-def create_user_info_endpoint(request: CreateUserInfoData, db: Session = Depends(get_session)):
-    return create_user_info(request, db)
+@router.post("/employee/submit-all-info", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def submit_all_info(data: SubmitAllInfoData, db: Session = Depends(get_session)):
+    return submit_all_user_data(db, data)
 
-@router.post("/user/add-hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
-def create_hiring_info_endpoint(request: CreateHiringInfo, db: Session = Depends(get_session)):
-    return create_hiring_info(request, db)
-
-@router.post("/user/add-payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
-def create_payment_info_endpoint(request: CreatePaymentinfo, db: Session= Depends(get_session)):
-    return create_user_payment_info(request, db)
-
-@router.get("/user/user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
-def get_user_info_endpoint(emp_id: str, db: Session = Depends(get_session)):
-    return get_user_info(emp_id, db)
-
-@router.get("/user/hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
-def get_hiring_info_endpoint(emp_id: str, db: Session =Depends(get_session)):
-    return get_hiring_info(emp_id, db)
-
-@router.get("/user/payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
-def get_payment_info_endpoint(emp_id: str, db: Session = Depends(get_session)):
-    return get_payment_info(emp_id, db)
-
-@router.put("/user/edit-user-info", dependencies=[Depends(JWTBearer())], tags=["User Info"])
-def edit_user_info_endpoint(request: EditUserInfoData, db: Session = Depends(get_session)):
-    return edit_user_info(request, db)
-
-@router.put("/user/edit-hiring-info", dependencies=[Depends(JWTBearer())], tags=["Hiring Info"])
-def edit_hiring_info_endpoint(request: EditHiringInfo, db: Session = Depends(get_session)):
-    return edit_hiring_info(request, db)
-
-@router.put("/user/edit-payment-info", dependencies=[Depends(JWTBearer())], tags=["Payment Info"])
-def edit_payment_info_endpoint(request: EditPaymentinfo, db: Session= Depends(get_session)):
-    return edit_payment_info(request,db)
-
-@router.post("/user/submit-all-user-info", dependencies=[Depends(JWTBearer())], tags=["Submit Info"])
-def submit_all_user_info_endpoint(request: SubmitInfoForm, db: Session = Depends(get_session)):
-    return submit_all_user_info(request, db)
 
 ###Optional Data
 @router.post("/optional/add-company", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
@@ -157,10 +119,6 @@ def response_project_types(db: Session = Depends(get_session)):
 @router.post("/client/add-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
 def add_client_endpoint(client: CreateClient, session: Session=Depends(get_session)):
     return create_client_info(client, session)
-
-@router.post("/client/generate-client-code", dependencies=[Depends(JWTBearer())], tags=["Client"])
-def gennerate_client_code(request: GenerateClientCode, db: Session=Depends(get_session)):
-    return generate_client_code(request, db)
 
 @router.put("/client/edit-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
 def edit_client_endpoint(request: EditClient, db: Session=Depends(get_session)):

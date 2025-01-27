@@ -1,9 +1,8 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from models.user_model import Company, ContractType, DeductionInfo, Department, EmployeeType, Position, PersonalInfo, AddressInfo, RegistrationAddress, PaymentInfo, HiringInfo, ContactInfo, WorkingStatus
-from schemas.user_schema import AddressInfoRes, ContactInfoRes, CreateUserInfoData, CreatePaymentinfo, CreateHiringInfo, CreateUserPayment, EditHiringInfo, EditPaymentinfo, EditUserInfoData, HiringInfoRes, PaymentInfoRes, PersonalInfoRes, RegAddressInfoRes, SubmitInfoForm, UserInfoRes
-from schemas.optional_schema import FetchPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchWorkingStatus
+from models.user_model import DeductionInfo, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, RegistrationAddress, ContactInfo  
+from schemas.user_schema import AddressInfoBase,ContactInfoBase, HiringInfoBase,PersonalInfoBase,RegistrationAddressBase, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
 from sqlalchemy.orm import Session, joinedload
 from constants import ID_NOT_FOUND
 from models.auth_model import Users
@@ -13,359 +12,186 @@ def update_model_data(model, data: Dict):
     for key, value in data.items():
         setattr(model, key, value)
 
-def create_user_info(request: CreateUserInfoData, db: Session):
-    user = db.query(Users).filter(Users.emp_id == request.personal_info.emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found, can't create user info.")
 
-    emp_id = user.emp_id
-
-    # Create and add personal info
-    new_personal_info = PersonalInfo(
-        emp_id=emp_id,
-        nation_id=request.personal_info.nation_id,
-        thai_name=request.personal_info.thai_name,
-        eng_name=request.personal_info.eng_name,
-        thai_nickname=request.personal_info.thai_nickname,
-        eng_nickname=request.personal_info.eng_nickname,
-        gender=request.personal_info.gender,
-        nation=request.personal_info.nation,
-        religion=request.personal_info.religion,
-        date_birth=request.personal_info.date_birth,
-    )
-    db.add(new_personal_info)
-
-    # Create and add address info
-    new_address_info = AddressInfo(
-        emp_id=emp_id,
-        house_no=request.address_info.house_no,
-        village_no=request.address_info.village_no,
-        sub_district=request.address_info.sub_district,
-        district=request.address_info.district,
-        province=request.address_info.province,
-        zipcode=request.address_info.zipcode,
-        country=request.address_info.country,
-        room_no=request.address_info.room_no,
-        floor=request.address_info.floor,
-        village=request.address_info.village,
-        building=request.address_info.building,
-        alley=request.address_info.alley,
-        road=request.address_info.road,
-    )
-    db.add(new_address_info)
-
-    # Create and add registration address info
-    new_regis_address_info = RegistrationAddress(
-        emp_id=emp_id,
-        house_no=request.regis_address_info.house_no,
-        village_no=request.regis_address_info.village_no,
-        sub_district=request.regis_address_info.sub_district,
-        district=request.regis_address_info.district,
-        province=request.regis_address_info.province,
-        zipcode=request.regis_address_info.zipcode,
-        country=request.regis_address_info.country,
-        room_no=request.regis_address_info.room_no,
-        floor=request.regis_address_info.floor,
-        village=request.regis_address_info.village,
-        building=request.regis_address_info.building,
-        alley=request.regis_address_info.alley,
-        road=request.regis_address_info.road,
-    )
-    db.add(new_regis_address_info)
-
-    # Create and add contact info
-    new_contact_info = ContactInfo(
-        emp_id=emp_id,
-        email=request.contact_info.email,
-        line_id=request.contact_info.line_id,
-        tel=request.contact_info.tel,
-    )
-    db.add(new_contact_info)
-
-    # Refresh objects to avoid detachment issues
-    db.flush()
-    return {
-        "personal_info": new_personal_info,
-        "address_info": new_address_info,
-        "regis_address_info": new_regis_address_info,
-        "contact_info": new_contact_info,
-    }
-
-def edit_user_info(request: EditUserInfoData, db: Session = Depends(get_session)) -> Dict[str, Any]:
-    user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-    if not user: 
-        raise HTTPException(status_code=404, detail="User with ID does not exist.")
-    
-    model_mapping = [
-        (request.edit_personal_info, PersonalInfo),
-        (request.edit_address_info, AddressInfo),
-        (request.edit_regis_address_info, RegistrationAddress),
-        (request.edit_contact_info, ContactInfo),
-    ]
-
-    for schema, model_class in model_mapping:
-        if schema:
-            model_instance = db.query(model_class).filter(model_class.emp_id == user.emp_id).first()
-            if model_instance:
-                update_model_data(model_instance, schema.model_dump(exclude_unset=True))
-
+def create_personal_info(db: Session, emp_id: str, personal_info_data: dict):
+    personal_info_data["emp_id"] = emp_id
+    db_personal_info = PersonalInfo(**personal_info_data)  
+    db.add(db_personal_info)
     db.commit()
-    return{
-        "message": "User Info updated successfully.",
-        "emp_id": user.emp_id,
-    }
+    db.refresh(db_personal_info)
+    return db_personal_info
 
-def get_user_info(emp_id: str, db: Session=Depends(get_session)) -> UserInfoRes:
-    user = (
-        db.query(Users).filter(Users.emp_id == emp_id)
-        .options(
-            joinedload(Users.personal_info),
-            joinedload(Users.address_info),
-            joinedload(Users.registration_address),
-            joinedload(Users.contact_info),
-        )
-        .first()
-    )
-    if not user:
-        raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-
-    personal_info = (
-        PersonalInfoRes.model_validate(user.personal_info[0]) if user.personal_info else None
-    )
-    address_info = [
-        AddressInfoRes.model_validate(addr) for addr in user.address_info
-    ] if user.address_info else []
-    regis_address = [
-        RegAddressInfoRes.model_validate(addr) for addr in user.registration_address
-    ] if user.registration_address else []
-    contact_info = (
-        ContactInfoRes.model_validate(user.contact_info[0]) if user.contact_info else None
-    )
-    return UserInfoRes(        
-        emp_id=user.emp_id,
-        email=user.email,
-        personal_info=personal_info,
-        address_info=address_info,
-        regis_address=regis_address,
-        contact_info=contact_info,
-        )
-
-def create_hiring_info(request: CreateHiringInfo, db: Session=Depends(get_session)):
-    user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found, can't create hiring info.")
-    
-    emp_id = user.emp_id
-
-    new_hiring_info = HiringInfo(
-        emp_id=emp_id,
-        start_date=request.start_date,
-        working_status=request.working_status,
-        prodation_date=request.prodation_date,
-        terminate_date=request.terminate_date,
-        working_location=request.working_location,
-        contract_type=request.contract_type,
-        department=request.department,
-        position=request.position,
-        manager=request.manager,
-        emp_type=request.emp_type,
-    )
-    db.add(new_hiring_info)
-
+def create_address_info(db: Session, emp_id: str, address_info_data: dict):
+    address_info_data["emp_id"] = emp_id
+    db_address_info = AddressInfo(**address_info_data) 
+    db.add(db_address_info)
     db.commit()
-    db.refresh(new_hiring_info)
-    return{
-        "hiring_info": new_hiring_info
-    }
+    db.refresh(db_address_info)
+    return db_address_info
 
-
-def edit_hiring_info(request: EditHiringInfo, db: Session = Depends(get_session)):
-    user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-    
-    hiring_info = db.query(HiringInfo).filter(HiringInfo.emp_id == user.emp_id).first()
-    
-    update_model_data(hiring_info, request.model_dump(exclude_unset=True))
-
+def create_registration_address(db: Session, emp_id: str, reg_address_data: dict):
+    reg_address_data["emp_id"] = emp_id
+    db_registration_address = RegistrationAddress(**reg_address_data)  
+    db.add(db_registration_address)
     db.commit()
-    db.refresh(hiring_info)
+    db.refresh(db_registration_address)
+    return db_registration_address
 
-    return {
-        "message": "Hiring Information updated successfully.",
-        "hiring_info": hiring_info
-    }
-
-def get_hiring_info(emp_id: str, db: Session = Depends(get_session)) -> HiringInfoRes:
+def create_contact_info(db: Session, emp_id: str, contact_info_data: dict):
     user = db.query(Users).filter(Users.emp_id == emp_id).first()
     if not user:
-        raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-    
-    hiring_info = db.query(HiringInfo).filter(HiringInfo.emp_id == emp_id).first()
-    if not hiring_info:
-        raise HTTPException(status_code=404, detail="Hiring Information not found for this User.")
-    
-    return HiringInfoRes.model_validate(hiring_info)
-
-
-def create_user_payment_info(request: CreateUserPayment, db: Session=Depends(get_session)):
-    user = db.query(Users).filter(Users.emp_id == request.payment_info.emp_id).first()
-    if not user: 
-        raise HTTPException(status_code=404, detail="User not found, can't create user info.")
-    
-    emp_id = user.emp_id
-
-    new_payment_info = PaymentInfo(
-        emp_id=emp_id,
-        payment_type=request.payment_info.payment_type,
-        account_no=request.payment_info.account_no,
-        bank=request.payment_info.bank,
-        account_name=request.payment_info.account_name
-    )
-    db.add(new_payment_info)
-
-    new_deduction_info = DeductionInfo(
-        emp_id=emp_id,
-        deduct_social_security=request.deduction_info.deduct_social_security,
-        social_security_company=request.deduction_info.social_security_company,
-        social_security_emp_percentage=request.deduction_info.social_security_emp_percentage,
-        social_security_company_percentage=request.deduction_info.social_security_company_percentage,
-        enroll_date=request.deduction_info.enroll_date,
-        pri_healthcare=request.deduction_info.pri_healthcare,
-        sec_healthcare=request.deduction_info.sec_healthcare,
-        provide_fund_percentage=request.deduction_info.provide_fund_percentage,
-        fee=request.deduction_info.fee,
-        
-        has_social_security=request.deduction_info.has_social_security,
-        establishment_location=request.deduction_info.establishment_location,
-        deduct_SLF_IC=request.deduction_info.deduct_SLF_IC,
-        pay_SLF_IC=request.deduction_info.pay_SLF_IC,
-
-        has_other_details=request.deduction_info.has_other_details,
-        other_details=request.deduction_info.other_details,
-        other_expenses=request.deduction_info.other_expenses,
-        other_percentage=request.deduction_info.other_percentage,
-    )
-    db.add(new_deduction_info)
-    db.commit()
-    db.refresh(new_payment_info)
-    db.refresh(new_deduction_info)
-
-    return{
-        "payment_info": new_payment_info,
-        "deduction_info": new_deduction_info,
-    }
-
-# def create_payment_info(request:CreatePaymentinfo, db: Session=Depends(get_session)):
-#     user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found, can't create payment info.")
-    
-#     emp_id = user.emp_id
-
-#     new_payment_info = PaymentInfo(
-#         emp_id=emp_id,
-#         payment_period=request.payment_period,
-#         payment_type=request.payment_type,
-#         account_no=request.account_no,
-#         bank=request.bank,
-#         account_name=request.account_name
-#     )
-#     db.add(new_payment_info)
-
-#     db.commit()
-#     db.refresh(new_payment_info)
-#     return{
-#         "payment_info": new_payment_info
-#     }
-
-# def edit_payment_info(request: EditPaymentinfo, db: Session = Depends(get_session)):
-#     user = db.query(Users). filter(Users.emp_id == request.emp_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-
-#     payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == user.emp_id).first()
-    
-#     update_model_data(payment_info, request.model_dump(exclude_unset=True))
-
-#     db.commit()
-#     db.refresh(payment_info)
-
-#     return {
-#         "message": "Payment Information updated successfully.",
-#         "payment_info": payment_info
-#     }
-
-# def get_payment_info(emp_id: str, db: Session = Depends(get_session)) -> PaymentInfoRes:
-#     user = db.query(Users).filter(Users.emp_id == emp_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail=ID_NOT_FOUND)
-    
-#     payment_info = db.query(PaymentInfo).filter(PaymentInfo.emp_id == emp_id).first()
-#     if not payment_info:
-#         raise  HTTPException(status_code=404, detail="Payment Information not found for this User.")
-    
-#     return PaymentInfoRes.model_validate(payment_info)
-
-def submit_all_user_info(request: SubmitInfoForm, db: Session = Depends(get_session)):
-    try:
-        # Validate user existence
-        user = db.query(Users).filter(Users.emp_id == request.emp_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found, can't create user info.")
-
-        # Create all associated data
-        create_user_info(request.user_info, db)
-        create_hiring_info(request.hiring_info, db)
-        create_user_payment_info(request.user_payment_info, db)
-
-        # Commit after all successful operations
-        db.commit()
-
-        return {"message": "The User data submitted successfully."}
-    except Exception as e:
-        db.rollback()  # Ensure rollback on failure
-        raise HTTPException(status_code=500, detail=f"Failed to submit Data: {str(e)}")
-
-
-    
-def fetch_company(db: Session = Depends(get_session)):
-    companies = db.query(Company).all()
-    return[{"id": company.id, "company": company.company} for company in companies]
-
-def fetch_emp_type(db: Session = Depends(get_session)):
-    employee_types = db.query(EmployeeType).all()
-    return [{"id": emp_type.id, "employee_type": emp_type.employee_type } for emp_type in employee_types]
-
-def fetch_contract(db: Session = Depends(get_session)):
-    contrac_types = db.query(ContractType).all()
-    return [{"id": contract_type.id, "contract_type": contract_type.contract_type} for contract_type in contrac_types] 
-
-def fetch_department(db: Session = Depends(get_session)):
-    departments = db.query(Department).options(joinedload(Department.positions)).all()
-
-    department_list = []
-    for department in departments:
-        position = [
-            FetchPosition.model_validate(position)
-            for position in department.positions if position.department_id is not None
-        ]
-        department_list.append(
-            FetchDepartment(
-                id = department.id,
-                department = department.department,
-                positions=position
-            )
+        raise HTTPException(
+            status_code=400,
+            detail=f"User with emp_id '{emp_id}' does not exist."
         )
-    return department_list
 
-def fetch_positions(db: Session = Depends(get_session)) -> List[FetchPosition]:
-    positions = db.query(Position).all()
-    return [FetchPosition.model_validate(position) for position in positions]
+    contact_info_data["email"] = user.email
+    contact_info_data["emp_id"] = emp_id
 
-def fetch_working_status(db: Session = Depends(get_session)):
-    worked_status = db.query(WorkingStatus).all()
-    return [{"id": working_status.id, "working_status": working_status.working_status} for working_status in worked_status]
+    db_contact_info = ContactInfo(**contact_info_data)
+    db.add(db_contact_info)
+    db.commit()
+    db.refresh(db_contact_info)
+    return db_contact_info
 
+def create_hiring_info(db: Session, emp_id: str, hiring_info_data: dict):
+    hiring_info_data["emp_id"] = emp_id
+    db_hiring_info = HiringInfo(**hiring_info_data)
+    db.add(db_hiring_info)
+    db.commit()
+    db.refresh(db_hiring_info)
+    return db_hiring_info
+    
+def create_payment_info(db: Session, emp_id: str, payment_info_data: dict):
+    payment_info_data["emp_id"] = emp_id
+    db_payment_info = PaymentInfo(**payment_info_data)
+    db.add(db_payment_info)
+    db.commit()
+    db.refresh(db_payment_info)
+    return db_payment_info
 
+def create_deduction_info(db: Session, emp_id: str, deduction_info_data: dict):
+    deduction_info_data["emp_id"] = emp_id
+    db_deduction_info = DeductionInfo(**deduction_info_data)
+    db.add(db_deduction_info)
+    db.commit()
+    db.refresh(db_deduction_info)
+    return db_deduction_info
 
+def process_model_creation(
+    db: Session,
+    emp_id: str,
+    model_cls,
+    existing_query_cls,
+    creation_func,
+    data_dict: dict,
+    model_name: str,
+):
+
+    try:
+        existing_data = db.query(existing_query_cls).filter(existing_query_cls.emp_id == emp_id).first()
+        if existing_data:
+            return {
+                "status": "error",
+                "error": f"{model_name} with emp_id '{emp_id}' already exists."
+            }
+        
+        new_data = creation_func(db, emp_id, data_dict)
+        return {
+            "status": "success",
+            "data": new_data
+        }
+    except Exception as e:
+        db.rollback()
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+    
+def process_all_sections(
+    db: Session,
+    emp_id: str,
+    data_sections: List[Dict[str, Any]]
+):
+
+    responses = {}
+    for section in data_sections:
+        if section["data_dict"]:  # Process only if data exists
+            responses[section["model_name"]] = process_model_creation(
+                db=db,
+                emp_id=emp_id,
+                model_cls=section["model_cls"],
+                existing_query_cls=section["existing_query_cls"],
+                creation_func=section["creation_func"],
+                data_dict=section["data_dict"],
+                model_name=section["model_name"]
+            )
+    return responses
+
+def submit_all_user_data(db: Session, data: SubmitAllInfoData) -> dict:
+    emp_id = data.emp_id
+    data_sections = []
+
+    if data.userInfo:
+        user_info = data.userInfo
+        data_sections.extend([
+            {
+                "data_dict": user_info.personal_info.model_dump() if user_info.personal_info else None,
+                "model_cls": PersonalInfo,
+                "existing_query_cls": PersonalInfo,
+                "creation_func": create_personal_info,
+                "model_name": "Personal info"
+            },
+            {
+                "data_dict": user_info.address_info.model_dump() if user_info.address_info else None,
+                "model_cls": AddressInfo,
+                "existing_query_cls": AddressInfo,
+                "creation_func": create_address_info,
+                "model_name": "Address info"
+            },
+            {
+                "data_dict": user_info.registration_address.model_dump() if user_info.registration_address else None,
+                "model_cls": RegistrationAddress,
+                "existing_query_cls": RegistrationAddress,
+                "creation_func": create_registration_address,
+                "model_name": "Registration address"
+            },
+            {
+                "data_dict": user_info.contact_info.model_dump() if user_info.contact_info else None,
+                "model_cls": ContactInfo,
+                "existing_query_cls": ContactInfo,
+                "creation_func": create_contact_info,
+                "model_name": "Contact info"
+            }
+        ])
+
+    if data.hiringInfo:
+        hiring_info = data.hiringInfo
+        data_sections.append({
+            "data_dict": hiring_info.hiring_info.model_dump() if hiring_info.hiring_info else None,
+            "model_cls": HiringInfo,
+            "existing_query_cls": HiringInfo,
+            "creation_func": create_hiring_info,
+            "model_name": "Hiring info"
+        })
+
+    if data.paymentInfo:
+        payment_info = data.paymentInfo
+        data_sections.extend([
+            {
+                "data_dict": payment_info.payment_info.model_dump() if payment_info.payment_info else None,
+                "model_cls": PaymentInfo,
+                "existing_query_cls": PaymentInfo,
+                "creation_func": create_payment_info,
+                "model_name": "Payment info"
+            },
+            {
+                "data_dict": payment_info.deduction_info.model_dump() if payment_info.deduction_info else None,
+                "model_cls": DeductionInfo,
+                "existing_query_cls": DeductionInfo,
+                "creation_func": create_deduction_info,
+                "model_name": "Deduction info"
+            }
+        ])
+
+    return process_all_sections(db, emp_id, data_sections)

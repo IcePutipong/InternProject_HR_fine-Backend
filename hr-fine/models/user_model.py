@@ -132,11 +132,6 @@ class DeductionInfo(Base):
     deduct_SLF_IC = Column(Boolean, nullable=True)
     pay_SLF_IC = Column(Float, nullable=True)
 
-    has_other_details = Column(Boolean, nullable=False)
-    other_details = Column(String(100), nullable=True)
-    other_expenses = Column(Float, nullable=True)
-    other_percentage = Column(Float, nullable= True)
-
     user = relationship("Users", back_populates="deduction_info", foreign_keys=[emp_id])
 
 class Company(Base):
