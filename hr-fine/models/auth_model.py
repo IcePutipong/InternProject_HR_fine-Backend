@@ -13,13 +13,13 @@ class Users(Base):
     create_year = Column(Integer)
     reset_status = Column(Boolean, default=False)
 
-    personal_info = relationship("PersonalInfo", back_populates="user")
-    address_info = relationship("AddressInfo", back_populates="user")
-    registration_address = relationship("RegistrationAddress", back_populates="user")
-    hiring_info = relationship("HiringInfo", back_populates="user")
-    payment_info = relationship("PaymentInfo", back_populates="user")
-    contact_info = relationship("ContactInfo", back_populates="user", foreign_keys="[ContactInfo.emp_id]")
-    deduction_info = relationship("DeductionInfo", back_populates="user")
+    personal_info = relationship("PersonalInfo", back_populates="user", uselist=False)
+    address_info = relationship("AddressInfo", back_populates="user", uselist=False)
+    registration_address = relationship("RegistrationAddress", back_populates="user", uselist=False)
+    hiring_info = relationship("HiringInfo", back_populates="user", uselist=False)
+    payment_info = relationship("PaymentInfo", back_populates="user", uselist=False)
+    contact_info = relationship("ContactInfo", back_populates="user", foreign_keys="[ContactInfo.emp_id]", uselist=False)
+    deduction_info = relationship("DeductionInfo", back_populates="user", uselist=False)
 
 class RefreshToken(Base):
     __tablename__ = "refresh_token"

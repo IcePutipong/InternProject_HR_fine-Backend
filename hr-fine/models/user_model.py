@@ -87,7 +87,7 @@ class HiringInfo(Base):
     emp_id = Column(String(100), ForeignKey(AUTH_USER_EMP_ID), nullable=False)
 
     start_date = Column(Date, nullable=False)
-    working_status = Column(String(20), nullable=False)
+    working_status = Column(String(30), nullable=False)
     prodation_date = Column(Date, nullable=False)
     terminate_date = Column(Date, nullable=False)
     

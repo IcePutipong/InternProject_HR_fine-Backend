@@ -6,13 +6,15 @@ from database.db import get_session
 from schemas.auth_schema import UserLogin, UserRegister, ChangePassword
 from services import auth_service
 
+from models.user_model import AddressInfo, DeductionInfo, HiringInfo, PaymentInfo,  PersonalInfo, RegistrationAddress
+
 from typing import List
-from schemas.user_schema import SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
+from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientRes, CreateClient, EditClient, GenerateClientCode
 from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes
 
-from services.user_service import submit_all_user_data
+from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_contact_info, update_or_create_employee_info
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_info, edit_client_info
 from services.project_service import generate_project_code
@@ -52,6 +54,42 @@ def refresh_token_endpoint(refresh_token: str, session: Session= Depends(get_ses
 @router.post("/employee/submit-all-info", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def submit_all_info(data: SubmitAllInfoData, db: Session = Depends(get_session)):
     return submit_all_user_data(db, data)
+
+@router.get("/employees", response_model=List[EmployeeDashboardInfo], dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def fetch_employee_dashboard_info(db: Session = Depends(get_session)):
+    return get_all_employees_dashboard(db)
+
+@router.get("/employee/{emp_id}", response_model=EmployeeDetails, dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def fetch_employee_details(emp_id: str, db: Session = Depends(get_session)):
+    return get_employee_details_by_id(db, emp_id)
+
+@router.put("/personal-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_personal_info(emp_id: str, data: UpdatePersonalInfo, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, PersonalInfo, data.model_dump(exclude_unset=True))
+
+@router.put("/address-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_address_info(emp_id: str, data: UpdateAddressInfo, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, AddressInfo, data.model_dump(exclude_unset=True))
+
+@router.put("/registration-address/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_registration_address(emp_id: str, data: UpdateRegistrationAddress, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, RegistrationAddress, data.model_dump(exclude_unset=True))
+
+@router.put("/contact-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_contact_info(emp_id: str, data: UpdateContactInfo, db: Session = Depends(get_session)):
+    return update_contact_info(db, emp_id, data.model_dump(exclude_unset=True))
+
+@router.put("/hiring-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_hiring_info(emp_id: str, data: UpdateHiringInfo, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, HiringInfo, data.model_dump(exclude_unset=True))
+
+@router.put("/payment-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_payment_info(emp_id: str, data: UpdatePaymentInfo, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, PaymentInfo, data.model_dump(exclude_unset=True))
+
+@router.put("/deduction-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
+def edit_deduction_info(emp_id: str, data: UpdateDeductionInfo, db: Session = Depends(get_session)):
+    return update_or_create_employee_info(db, emp_id, DeductionInfo, data.model_dump(exclude_unset=True))
 
 
 ###Optional Data

@@ -2,7 +2,7 @@ from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
 from models.user_model import DeductionInfo, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, RegistrationAddress, ContactInfo  
-from schemas.user_schema import AddressInfoBase,ContactInfoBase, HiringInfoBase,PersonalInfoBase,RegistrationAddressBase, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
+from schemas.user_schema import AddressInfoBase,ContactInfoBase, DeductionInfoBase, EmployeeDashboardInfo, EmployeeDetails, HiringInfoBase, PaymentInfoBase,PersonalInfoBase,RegistrationAddressBase, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
 from sqlalchemy.orm import Session, joinedload
 from constants import ID_NOT_FOUND
 from models.auth_model import Users
@@ -195,3 +195,119 @@ def submit_all_user_data(db: Session, data: SubmitAllInfoData) -> dict:
         ])
 
     return process_all_sections(db, emp_id, data_sections)
+
+def get_all_employees_dashboard(db: Session):
+    employees = (
+        db.query(
+            Users.emp_id,
+            PersonalInfo.thai_name,
+            HiringInfo.position,
+            HiringInfo.working_location,
+            Users.email
+        )
+        .outerjoin(PersonalInfo, Users.emp_id == PersonalInfo.emp_id)
+        .outerjoin(HiringInfo, Users.emp_id == HiringInfo.emp_id)      
+        .outerjoin(ContactInfo, Users.emp_id == ContactInfo.emp_id)    
+        .all()
+    )
+
+    return [
+        EmployeeDashboardInfo(
+            emp_id=emp.emp_id,
+            thai_name=emp.thai_name or "N/A",  
+            position=emp.position or "N/A",  
+            working_location=emp.working_location or "N/A",  
+            email=emp.email or "N/A"          
+        )
+        for emp in employees
+    ]
+
+def get_employee_details_by_id(db: Session, emp_id: str) -> EmployeeDetails:
+    user = (
+        db.query(Users)
+        .options(
+            joinedload(Users.personal_info),
+            joinedload(Users.address_info),
+            joinedload(Users.registration_address),
+            joinedload(Users.contact_info),
+            joinedload(Users.hiring_info),
+            joinedload(Users.payment_info),
+            joinedload(Users.deduction_info),
+        )
+        .filter(Users.emp_id == emp_id)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Employee with emp_id '{emp_id}' not found.")
+
+    personal_info_data = user.personal_info.__dict__ if user.personal_info else None
+    if personal_info_data and personal_info_data.get("date_birth"):
+        personal_info_data["date_birth"] = personal_info_data["date_birth"].isoformat()
+
+    deduction_info_data = user.deduction_info.__dict__ if user.deduction_info else None
+    if deduction_info_data and deduction_info_data.get("enroll_date"):
+        deduction_info_data["enroll_date"] = deduction_info_data["enroll_date"].isoformat()
+
+    return EmployeeDetails(
+        emp_id=user.emp_id,
+        email=user.email,
+        personal_info=PersonalInfoBase(**personal_info_data) if personal_info_data else None,
+        address_info=AddressInfoBase(**user.address_info.__dict__) if user.address_info else None,
+        registration_address=RegistrationAddressBase(**user.registration_address.__dict__) if user.registration_address else None,
+        contact_info=ContactInfoBase(**user.contact_info.__dict__) if user.contact_info else None,
+        hiring_info=HiringInfoBase(**user.hiring_info.__dict__) if user.hiring_info else None,
+        payment_info=PaymentInfoBase(**user.payment_info.__dict__) if user.payment_info else None,
+        deduction_info=DeductionInfoBase(**user.deduction_info.__dict__) if user.deduction_info else None,
+    )
+
+def update_or_create_employee_info(db: Session, emp_id: str, model, update_data: dict, create_if_not_exists=True):
+    """ 
+    Generic function to update any employee-related model.
+    - If the record exists, it updates the existing data.
+    - If the record does not exist and `create_if_not_exists=True`, it creates a new record.
+    """
+    record = db.query(model).filter(model.emp_id == emp_id).first()
+
+    if not record:
+        if create_if_not_exists:
+            new_record = model(emp_id=emp_id, **update_data)
+            db.add(new_record)
+            db.commit()
+            db.refresh(new_record)
+            return new_record
+        else:
+            raise HTTPException(status_code=404, detail=f"Record for {model.__tablename__} with emp_id '{emp_id}' not found.")
+
+    for key, value in update_data.items():
+        if value is not None:
+            setattr(record, key, value)
+    
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def update_contact_info(db: Session, emp_id: str, contact_data: dict):
+    """
+    Special function to update ContactInfo and Users email together.
+    Ensures that if the email is changed, it updates both the auth table (`Users`) and `ContactInfo`.
+    """
+    contact_info = db.query(ContactInfo).filter(ContactInfo.emp_id == emp_id).first()
+    user = db.query(Users).filter(Users.emp_id == emp_id).first()
+
+    if not contact_info or not user:
+        raise HTTPException(status_code=404, detail=f"ContactInfo or User record not found for emp_id '{emp_id}'")
+
+    if "email" in contact_data:
+        user.email = contact_data["email"]  
+        contact_info.email = contact_data["email"]  
+
+    for key, value in contact_data.items():
+        if value is not None:
+            setattr(contact_info, key, value)
+
+    db.commit()
+    db.refresh(contact_info)
+    db.refresh(user)
+    return contact_info
