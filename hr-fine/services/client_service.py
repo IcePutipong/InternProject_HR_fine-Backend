@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from schemas.client_schema import CreateClient, EditClient, ClientRes, GenerateClientCode
+from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient
 from sqlalchemy.orm import Session, joinedload
 from models.client_model import Client
 from models.project_model import ProjectType
@@ -52,9 +52,30 @@ def  edit_client_info(request: EditClient, db: Session =Depends(get_session)):
         "client_info": client_info
     }
 
-def get_client_info(client_id: str, db: Session=Depends(get_session)):
-    client_info = db.query(Client).filter(Client.client_id == client_id).first()
-    if not client_info: 
-        raise HTTPException(status_code=404, detail="Client with this Client_ID not Found.")
-    
-    return ClientRes.model_validate(client_info)
+def get_client_dashboard(db: Session):
+    clients = (
+        db.query(
+            Client.client_id,
+            Client.client_code,
+            Client.client_email,
+            Client.client_name,
+            ProjectType.project_types.label("project_type"),
+            Client.contact_address,
+            Client.client_tel
+        )
+        .join(ProjectType, Client.client_type == ProjectType.id)
+        .all()
+    )
+
+    return [
+        ClientDashboardInfo(
+            client_id=client.client_id,
+            client_code=client.client_code,
+            client_name=client.client_name,
+            client_type=client.project_type,
+            client_email=client.client_email,
+            contact_address=client.contact_address,
+            client_tel=client.client_tel
+        )
+        for client in clients
+    ]

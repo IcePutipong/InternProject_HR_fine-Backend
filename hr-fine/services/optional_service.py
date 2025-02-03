@@ -157,7 +157,7 @@ def create_project_type(request: AddProjectType, db: Session=Depends(get_session
 
 def response_project_type(db: Session = Depends(get_session)):
     project_types = db.query(ProjectType).all()
-    return [{"id": project_type.id, "project_types": project_type.project_types, "project_type_code": project_type.project_type_code } for project_type in project_types]
+    return [{"id": project_type.id, "project_types": project_type.project_types } for project_type in project_types]
 
 def fetch_company(db: Session = Depends(get_session)):
     companies = db.query(Company).all()

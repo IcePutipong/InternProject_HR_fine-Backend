@@ -19,13 +19,14 @@ class EditClient(BaseModel):
     contact_address: Optional[str] =None
     client_tel: Optional[str] =None
 
-class ClientRes(BaseModel):
-    client_type: Optional[str] =None
-    client_name: Optional[str] =None
-    client_code: Optional[str] =None
-    client_email: Optional[EmailStr] =None
-    contact_address: Optional[str] =None
-    client_tel: Optional[str] =None
+class ClientDashboardInfo (BaseModel):
+    client_id: int
+    client_code: str
+    client_name: str
+    client_type: str   
+    client_email: str
+    contact_address: str
+    client_tel: str
 
     model_config = {
         "from_attributes": True

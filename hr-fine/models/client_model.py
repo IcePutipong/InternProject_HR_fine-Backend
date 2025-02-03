@@ -9,8 +9,8 @@ class Client(Base):
     client_id = Column(Integer, primary_key=True, index=True)
 
     client_type = Column(Integer,ForeignKey("project_types.id") ,nullable=False)
-    client_name =Column(String(20), nullable=False)
-    client_code = Column(String(10), nullable=False)
+    client_name =Column(String(50), nullable=False, unique=True)
+    client_code = Column(String(10), nullable=False, unique=True)
     client_email = Column(String(30), nullable=False)
     contact_address = Column(String(1000), nullable=False)
     client_tel = Column(String(15), nullable=False)
