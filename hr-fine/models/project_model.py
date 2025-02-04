@@ -57,5 +57,5 @@ class ProjectType(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     project_types = Column(String(20), nullable=False)
-    client_type = relationship("Client", back_populates="types")
+    client = relationship("Client", back_populates="types")
     

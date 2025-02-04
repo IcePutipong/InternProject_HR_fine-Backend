@@ -162,11 +162,22 @@ def fetch_clients_dashboard_info(db: Session = Depends(get_session)):
 def edit_client_endpoint(request: EditClient, db: Session=Depends(get_session)):
     return edit_client_info(request, db)
 
-@router.get("/client/fetch-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
-def fetch_client_endpoint(client_id:int, db: Session= Depends(get_session)):
-    return get_client_info(client_id, db)
+@router.post("/client/add-client", dependencies=[Depends(JWTBearer())], tags=["Client"])
+def add_client_endpoint(client: CreateClient, session: Session = Depends(get_session)):
+    try:
+        return create_client_info(client, session)
+    except HTTPException as http_err:
+        raise http_err  
+    except Exception as e:
+        import traceback
+        print("❌ Error occurred:", e)
+        print(traceback.format_exc())
+        session.rollback()  
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+
 
 ###Project
-@router.post("/project/generate-projecet-code", dependencies=[Depends(JWTBearer())], tags=["Project"])
+@router.post("/project/generate-project-code", dependencies=[Depends(JWTBearer())], tags=["Project"])
 def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends(get_session)):
     return generate_project_code(request, db)

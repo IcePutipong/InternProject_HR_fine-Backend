@@ -16,5 +16,5 @@ class Client(Base):
     client_tel = Column(String(15), nullable=False)
 
     project_details = relationship("ProjectDetails", back_populates="client")
-    types = relationship = relationship( "ProjectType", back_populates="client_type")
+    types = relationship( "ProjectType", back_populates="client")
 

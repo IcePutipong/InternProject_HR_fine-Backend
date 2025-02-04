@@ -8,33 +8,41 @@ from models.project_model import ProjectType
 from services.user_service import update_model_data
 
 def create_client_info(request: CreateClient, db: Session = Depends(get_session)):
+
     existing_client = db.query(Client).filter(Client.client_name == request.client_name).first()
     if existing_client:
-        raise HTTPException(status_code=400, detail=f"Client with {request.client_name} Already Exist.")
-    
+        raise HTTPException(status_code=400, detail=f"Client with name '{request.client_name}' already exists.")
+
     existing_client_code = db.query(Client).filter(Client.client_code == request.client_code).first()
     if existing_client_code:
-        raise HTTPException(status_code=400, detail=f"Client code with {request.client_code} already exist pls try other code.")
-
+        raise HTTPException(status_code=400, detail=f"Client code '{request.client_code}' already exists. Please try another code.")
+        
     new_client_info = Client(
         client_type=request.client_type,
         client_name=request.client_name,
-        client_code= request.client_code,
-        client_email = request.client_email,
-        contact_address = request.contact_address,
-        client_tel = request.client_tel
+        client_code=request.client_code,
+        client_email=request.client_email,
+        contact_address=request.contact_address,
+        client_tel=request.client_tel
     )
+
     db.add(new_client_info)
     db.commit()
-    db.refresh(new_client_info)
+    db.refresh(new_client_info) 
+
     return {
-        "client_type": new_client_info.client_type,
-        "client_name":new_client_info.client_name,
-        "client_code": new_client_info.client_code,
-        "client_email": new_client_info.client_email,
-        "contact_address": new_client_info.contact_address,
-        "client_tel": new_client_info.client_tel,
+        "message": "Client created successfully.",
+        "client": {
+            "client_id": new_client_info.client_id,
+            "client_type": new_client_info.client_type,
+            "client_name": new_client_info.client_name,
+            "client_code": new_client_info.client_code,
+            "client_email": new_client_info.client_email,
+            "contact_address": new_client_info.contact_address,
+            "client_tel": new_client_info.client_tel,
+        }
     }
+
 
 def  edit_client_info(request: EditClient, db: Session =Depends(get_session)):
     client = db.query(Client).filter(Client.client_id == request.client_id).first()
@@ -52,7 +60,7 @@ def  edit_client_info(request: EditClient, db: Session =Depends(get_session)):
         "client_info": client_info
     }
 
-def get_client_dashboard(db: Session):
+def get_client_dashboard(db: Session=Depends(get_session)):
     clients = (
         db.query(
             Client.client_id,
@@ -63,6 +71,7 @@ def get_client_dashboard(db: Session):
             Client.contact_address,
             Client.client_tel
         )
+        .order_by(Client.client_id)
         .join(ProjectType, Client.client_type == ProjectType.id)
         .all()
     )
