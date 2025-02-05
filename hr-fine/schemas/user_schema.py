@@ -53,9 +53,9 @@ class ContactInfoBase(BaseModel):
 
 class SubmitUserInfo(BaseModel):
     personal_info: PersonalInfoBase
-    address_info: Optional[AddressInfoBase] = None
-    registration_address: Optional[RegistrationAddressBase] = None
-    contact_info: Optional[ContactInfoBase] = None
+    address_info: AddressInfoBase
+    registration_address: RegistrationAddressBase
+    contact_info: ContactInfoBase
 
 class HiringInfoBase(BaseModel):
     start_date: date
@@ -65,8 +65,8 @@ class HiringInfoBase(BaseModel):
     emp_type: str
     working_location: str
     contract_type: str
-    department: str
-    position: str
+    department: int 
+    position: int
     manager: str
 
 
@@ -199,8 +199,8 @@ class UpdateHiringInfo(BaseModel):
     emp_type: Optional[str] = None
     working_location: Optional[str] = None
     contract_type: Optional[str] = None
-    department: Optional[str] = None
-    position: Optional[str] = None
+    department: Optional[int] = None
+    position: Optional[int] = None
     manager: Optional[str] = None
 
     class Config:

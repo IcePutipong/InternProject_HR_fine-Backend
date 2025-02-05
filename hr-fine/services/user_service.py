@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from models.user_model import DeductionInfo, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, RegistrationAddress, ContactInfo  
+from models.user_model import DeductionInfo, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, Position, RegistrationAddress, ContactInfo  
 from schemas.user_schema import AddressInfoBase,ContactInfoBase, DeductionInfoBase, EmployeeDashboardInfo, EmployeeDetails, HiringInfoBase, PaymentInfoBase,PersonalInfoBase,RegistrationAddressBase, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
 from sqlalchemy.orm import Session, joinedload
 from constants import ID_NOT_FOUND
@@ -201,13 +201,14 @@ def get_all_employees_dashboard(db: Session):
         db.query(
             Users.emp_id,
             PersonalInfo.thai_name,
-            HiringInfo.position,
+            Position.position.label("position_name"),
             HiringInfo.working_location,
             Users.email
         )
         .outerjoin(PersonalInfo, Users.emp_id == PersonalInfo.emp_id)
         .outerjoin(HiringInfo, Users.emp_id == HiringInfo.emp_id)      
-        .outerjoin(ContactInfo, Users.emp_id == ContactInfo.emp_id)    
+        .outerjoin(ContactInfo, Users.emp_id == ContactInfo.emp_id) 
+        .outerjoin(Position, HiringInfo.position == Position.id)   
         .all()
     )
 
@@ -215,7 +216,7 @@ def get_all_employees_dashboard(db: Session):
         EmployeeDashboardInfo(
             emp_id=emp.emp_id,
             thai_name=emp.thai_name or "N/A",  
-            position=emp.position or "N/A",  
+            position=emp.position_name or "N/A",  
             working_location=emp.working_location or "N/A",  
             email=emp.email or "N/A"          
         )

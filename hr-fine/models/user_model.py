@@ -94,11 +94,14 @@ class HiringInfo(Base):
     emp_type = Column(String(50), nullable=False)
     working_location = Column(String(50), nullable=False)
     contract_type = Column(String(50), nullable=False)
-    department = Column(String(50), nullable=False)
-    position = Column(String(50), nullable=False)
+    department  = Column(Integer, ForeignKey("department.id"), nullable=False)
+    position  = Column(Integer, ForeignKey("position.id"), nullable=False)
     manager = Column(String(100), nullable=False)
 
     user = relationship("Users", back_populates="hiring_info")
+    emp_department = relationship("Department", back_populates="hiring_info")
+    emp_position = relationship("Position", back_populates="hiring_info")
+
     
 class PaymentInfo(Base):
     __tablename__ = "payment_info"
@@ -154,7 +157,10 @@ class Department(Base):
     __tablename__ = "department"
     id = Column(Integer, primary_key=True, index=True)
     department = Column(String(50), nullable=False)
+
     positions = relationship("Position", back_populates="department")
+    hiring_info = relationship("HiringInfo", back_populates="emp_department")
+
     
 
 class Position(Base):
@@ -162,7 +168,10 @@ class Position(Base):
     id = Column(Integer, primary_key=True, index=True)
     position = Column(String(50), nullable=False)
     department_id = Column(Integer, ForeignKey("department.id"), nullable=False)
+
     department = relationship("Department", back_populates="positions")
+    hiring_info = relationship("HiringInfo", back_populates="emp_position")
+
  
 class WorkingStatus(Base):
     __tablename__ = "working_status"
