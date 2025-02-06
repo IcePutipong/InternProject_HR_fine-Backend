@@ -3,113 +3,56 @@ from datetime import date
 from typing import List, Optional
 
 class CreateProjectDetails(BaseModel):
-    project_type: str
+    project_type: int
     project_code: str
     project_name: str
     project_contract_no: str
     project_details: Optional[str]= None
-    project_client: str
-    proejct_manager: str
+    project_client: int
+    project_manager: int
     color_mark: str
 
 class CreateProjectDuration(BaseModel):
-    project_id: int
     project_duration: int
     project_sign_date: date
     project_end_date: date
+    number_of_periods: int
 
 class CreateProjecBill(BaseModel):
-    project_id: int
     billable: bool
     project_value: float
     project_billing_rate: float
 
-class CreateProject(BaseModel):
+class SubmitProjectInfo(BaseModel):
     project_details: CreateProjectDetails
     project_duration: CreateProjectDuration
     project_bill: CreateProjecBill
 
 class CreateProjectPlan(BaseModel):
-    project_id: int
     period_no: int
     deli_duration: date
     deli_date: date
-    deli_details: str
-
-class EditProjectDetails(BaseModel):
-    project_code: Optional[str]= None
-    project_name: Optional[str]= None
-    project_contract_no: Optional[str]= None
-    project_details: Optional[str]= None
-    project_client: Optional[str]= None
-    proejct_manager: Optional[str]= None
-    color_mark: Optional[str]= None
-
-class EditProjectDuration(BaseModel):
-    project_id: Optional[int]= None
-    project_duration: Optional[int]= None
-    project_sign_date: Optional[date]= None
-    project_end_date: Optional[date]= None
-
-class EditProjectBill(BaseModel):
-    project_id: Optional[int] = None
-    billable: Optional[bool] = None
-    project_value: Optional[float] = None
-    project_billing_rate: Optional[float] = None
-
-class EditProjectPlan(BaseModel):
-    project_id: Optional[int] = None
-    period_no: Optional[int] = None
-    deli_duration: Optional[date] = None
-    deli_date: Optional[date] = None
     deli_details: Optional[str] = None
 
-class FetchProjectDetails(BaseModel):
-    project_code: Optional[str]= None
-    project_name: Optional[str]= None
-    project_contract_no: Optional[str]= None
-    project_details: Optional[str]= None
-    project_client: Optional[str]= None
-    proejct_manager: Optional[str]= None
-    color_mark: Optional[str]= None
+class SubmitProjectPlan(BaseModel):
+    project_plan: List[CreateProjectPlan]
 
-    model_config = {
-        "from_attributes": True
-    }
+class CreateProjectMember(BaseModel):
+    member_id: int
+    position_id: int
+    assigned_date: date
+    assigned_detail: str
 
-class FetchProjectDuration(BaseModel):
-    project_id: Optional[int]= None
-    project_duration: Optional[int]= None
-    project_sign_date: Optional[date]= None
-    project_end_date: Optional[date]= None
+class SubmitProjectMember(BaseModel):
+    project_member: List[CreateProjectMember]
 
-    model_config = {
-        "from_attributes": True
-    }
-
-class FetchProjectBill(BaseModel):
-    project_id: Optional[int] = None
-    billable: Optional[bool] = None
-    project_value: Optional[float] = None
-    project_billing_rate: Optional[float] = None
-
-    model_config = {
-        "from_attributes": True
-    }
-
-class FetchProjectPlan(BaseModel):
-    project_id: Optional[int] = None
-    period_no: Optional[int] = None
-    deli_duration: Optional[date] = None
-    deli_date: Optional[date] = None
-    deli_details: Optional[str] = None
-
-    model_config = {
-        "from_attributes": True
-    }
+class SubmitallProjectData(BaseModel):
+    projectInfo: SubmitProjectInfo
+    projectPlanInfo: SubmitProjectPlan
+    projectMemberInfo: SubmitProjectMember
 
 class GenerateProjectCode(BaseModel):
-    project_type: str
+    project_type: int
     client_name: str
 
 class GenerateProjectCodeRes(BaseModel):
@@ -118,3 +61,4 @@ class GenerateProjectCodeRes(BaseModel):
     model_config = {
         "from_attributes": True
     }
+

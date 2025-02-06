@@ -25,6 +25,8 @@ class PersonalInfo(Base):
 
     user = relationship("Users", back_populates="personal_info")
     managed_projects = relationship("ProjectDetails", back_populates="manager")
+    project_members  = relationship("ProjectMember", back_populates="member")
+
 
 
 class AddressInfo(Base):
@@ -101,6 +103,7 @@ class HiringInfo(Base):
     user = relationship("Users", back_populates="hiring_info")
     emp_department = relationship("Department", back_populates="hiring_info")
     emp_position = relationship("Position", back_populates="hiring_info")
+    project_members_position = relationship("ProjectMember", back_populates="member_position")
 
     
 class PaymentInfo(Base):
