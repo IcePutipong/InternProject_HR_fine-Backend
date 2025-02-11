@@ -30,7 +30,7 @@ class SubmitProjectInfo(BaseModel):
 
 class CreateProjectPlan(BaseModel):
     period_no: int
-    deli_duration: date
+    deli_duration: int
     deli_date: date
     deli_details: Optional[str] = None
 
@@ -40,7 +40,6 @@ class SubmitProjectPlan(BaseModel):
 class CreateProjectMember(BaseModel):
     member_id: int
     position_id: int
-    assigned_date: date
     assigned_detail: str
 
 class SubmitProjectMember(BaseModel):

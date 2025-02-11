@@ -12,12 +12,12 @@ from typing import List
 from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
-from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes
+from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes, SubmitallProjectData
 
 from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_contact_info, update_or_create_employee_info
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
-from services.project_service import generate_project_code
+from services.project_service import generate_project_code, submit_all_project_data
 
 router = APIRouter(
     prefix="/hr-fine",
@@ -181,3 +181,7 @@ def add_client_endpoint(client: CreateClient, session: Session = Depends(get_ses
 @router.post("/project/generate-project-code", dependencies=[Depends(JWTBearer())], tags=["Project"])
 def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends(get_session)):
     return generate_project_code(request, db)
+
+@router.post("/project/submit-projects-info", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def res_submit_all_project_data(request: SubmitallProjectData, db: Session = Depends(get_session)):
+    return submit_all_project_data(db, request)

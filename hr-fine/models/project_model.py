@@ -53,9 +53,9 @@ class ProjectPlan(Base):
 
     project_id = Column(Integer, ForeignKey(PROJECT_ID), nullable=False)
     period_no = Column(Integer, nullable=False)
-    deli_duration = Column(Date, nullable=False)
+    deli_duration = Column(Integer, nullable=False)
     deli_date = Column(Date, nullable=False)
-    deli_details = Column(String(100), nullable=True)
+    deli_details = Column(String(300), nullable=True)
 
 class ProjectMember(Base):
     __tablename__ = "project_member"

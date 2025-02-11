@@ -200,6 +200,7 @@ def get_all_employees_dashboard(db: Session):
     employees = (
         db.query(
             Users.emp_id,
+            PersonalInfo.id,
             PersonalInfo.thai_name,
             Position.position.label("position_name"),
             HiringInfo.working_location,
@@ -215,6 +216,7 @@ def get_all_employees_dashboard(db: Session):
     return [
         EmployeeDashboardInfo(
             emp_id=emp.emp_id,
+            id=emp.id if emp.id is not None else 0,
             thai_name=emp.thai_name or "N/A",  
             position=emp.position_name or "N/A",  
             working_location=emp.working_location or "N/A",  

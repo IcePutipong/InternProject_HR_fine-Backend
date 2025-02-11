@@ -111,6 +111,7 @@ class SubmitAllInfoData(BaseModel):
 
 class EmployeeDashboardInfo(BaseModel):
     emp_id: str
+    id: int
     thai_name: str
     position: str
     working_location: str
