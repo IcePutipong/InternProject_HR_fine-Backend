@@ -24,6 +24,7 @@ class ProjectDetails(Base):
     manager = relationship("PersonalInfo", back_populates="managed_projects")
     project_types = relationship("ProjectType", back_populates="project")
     project_members = relationship("ProjectMember", back_populates="project")
+    project_progress = relationship("TimeStamp", back_populates="project")
 
 
 class ProjectDuration(Base):

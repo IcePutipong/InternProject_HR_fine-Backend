@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from database.db import Base
+from models.timesheet_model import TimeStamp
 
 class Users(Base):
     __tablename__ = "users"
@@ -21,6 +22,8 @@ class Users(Base):
     contact_info = relationship("ContactInfo", back_populates="user", foreign_keys="[ContactInfo.emp_id]", uselist=False)
     deduction_info = relationship("DeductionInfo", back_populates="user", uselist=False)
 
+    time_stamp = relationship("TimeStamp", back_populates="user")
+    
 class RefreshToken(Base):
     __tablename__ = "refresh_token"
     id = Column(Integer, primary_key=True, index=True)
