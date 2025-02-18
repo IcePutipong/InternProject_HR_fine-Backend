@@ -4,13 +4,14 @@ from database.db import get_session
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm.exc import NoResultFound
 
+from pydantic import TypeAdapter
 from models.client_model import Client
 from models.project_model import ProjectDetails, ProjectBill, ProjectDuration, ProjectMember, ProjectPlan, ProjectType
-from models.user_model import PersonalInfo
+from models.auth_model import Users
 
 from services.user_service import update_model_data
 
-from schemas.project_schema import  GenerateProjectCode, SubmitallProjectData
+from schemas.project_schema import GenerateProjectCode, ProjectAllDetails, ProjectBillBase, ProjectDetailsBase, ProjectDurationBase, ProjectMemberBase, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
 from schemas.optional_schema import AddProjectType
 
 def update_model_data(model, data: Dict):
@@ -19,17 +20,17 @@ def update_model_data(model, data: Dict):
 
 def generate_project_code(request: GenerateProjectCode, db: Session = Depends(get_session)):
     try: 
-        client = db.query(Client).filter(Client.client_name == request.client_name).one()
+        client = db.query(Client).filter(Client.client_id == request.client_id).one()
         client_code = client.client_code
         client_project_type = client.client_type
     except NoResultFound:
         raise HTTPException(status_code=400, detail="Invalid client name or no client found")
     
-    if request.project_type != client_project_type:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Project type mismatch: Client '{request.client_name}' is associated with '{client_project_type}', not '{request.project_type}'."
-        )
+    # if request.project_type != client_project_type:
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail=f"Project type mismatch: Client '{request.client_name}' is associated with '{client_project_type}', not '{request.project_type}'."
+    #     )
     
     prefix = client_code
 
@@ -54,7 +55,7 @@ def create_project_details(db: Session, project_details_data: dict):
 
 
     project_manage_id = project_details_data.get("project_manager")
-    employee = db.query(PersonalInfo).filter(PersonalInfo.id == project_manage_id).first()
+    employee = db.query(Users).filter(Users.emp_id == project_manage_id).first()
     
     if not employee: 
         raise HTTPException(status_code=400, detail="Invalid project manager. Employee does not exist.")
@@ -84,7 +85,7 @@ def create_project_bill(db:Session, project_id: int, project_bill_data: dict):
 def create_project_member(db: Session, project_id: int, project_member_data: dict):
 
     member_id = project_member_data.get("member_id")
-    project_member = db.query(PersonalInfo).filter(PersonalInfo.id == member_id).first()
+    project_member = db.query(Users).filter(Users.emp_id == member_id).first()
 
     if not project_member:
          raise HTTPException(status_code=400, detail="Invalid project member. Employee does not exist.")
@@ -233,5 +234,46 @@ def submit_all_project_data(db: Session, data: SubmitallProjectData) -> dict:
         print(f"Error in submit_all_project_data: {str(e)}")  # Log the error
         return {"status": "error", "error": f"Unexpected error: {str(e)}"}
 
+def get_project_dashboard(db: Session=Depends(get_session)):
+    projects = (
+        db.query(
+            ProjectDetails.project_name,
+            ProjectDetails.project_code,
+            ProjectDetails.color_mark
+        )
+        .order_by(ProjectDetails.project_code)
+        .all()
+    )
+    return [
+        ProjectDashboardinfo(
+            project_name = project.project_name,
+            project_code = project.project_code,
+            color_mark = project.color_mark,
+        )
+        for project in projects
+    ]
 
+def get_project_details_by_id(db: Session, project_id: int) -> ProjectAllDetails:
+    project = (
+        db.query(ProjectDetails)
+        .options(
+            joinedload(ProjectDetails.project_duration),
+            joinedload(ProjectDetails.project_bill),
+            joinedload(ProjectDetails.project_plan),
+            joinedload(ProjectDetails.project_members),
+        )
+        .filter(ProjectDetails.project_id == project_id)
+        .first()
+    )
 
+    if not project: 
+        raise HTTPException(status_code=404, detail=f"Project with project_id '{project_id}' not found.")
+    
+    return ProjectAllDetails(
+        project_id=project.project_id,
+        project_details= ProjectDetailsBase(**project.__dict__) if project else None,
+        project_duration=ProjectDurationBase(**project.project_duration.__dict__) if project.project_duration else None,
+        project_bills=ProjectBillBase(**project.project_bill.__dict__) if project.project_plan else None,
+        project_plan=[ProjectPlanBase(**plan.__dict__) for plan in project.project_plan] if project.project_plan else [],
+        project_member=[ProjectMemberBase(**member.__dict__) for member in project.project_members] if project.project_members else [],
+    )

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,HTTPException
+from fastapi import APIRouter, Depends,HTTPException, Path
 from sqlalchemy.orm import Session
 
 from utils.jwt_bearer import JWTBearer
@@ -12,12 +12,12 @@ from typing import List
 from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
-from schemas.project_schema import GenerateProjectCode, GenerateProjectCodeRes, SubmitallProjectData
+from schemas.project_schema import  GenerateProjectCode,  ProjectAllDetails, SubmitallProjectData, ProjectDashboardinfo
 
 from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_contact_info, update_or_create_employee_info
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
-from services.project_service import generate_project_code, submit_all_project_data
+from services.project_service import generate_project_code, get_project_dashboard, get_project_details_by_id, submit_all_project_data
 
 router = APIRouter(
     prefix="/hr-fine",
@@ -185,3 +185,11 @@ def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends
 @router.post("/project/submit-projects-info", dependencies=[Depends(JWTBearer())], tags=["Project"])
 def res_submit_all_project_data(request: SubmitallProjectData, db: Session = Depends(get_session)):
     return submit_all_project_data(db, request)
+
+@router.get("/projects", response_model=List[ProjectDashboardinfo], dependencies=[Depends(JWTBearer())], tags=["Project"])
+def fetch_project_dashboard_info(db: Session = Depends(get_session)):
+    return get_project_dashboard(db)
+
+@router.get("/project/{project_id}", response_model=ProjectAllDetails, dependencies=[Depends(JWTBearer())], tags=["Project"])
+def fetch_project_details(project_id: int, db: Session = Depends(get_session)):
+    return get_project_details_by_id(db, project_id)

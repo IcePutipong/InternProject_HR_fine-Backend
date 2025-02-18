@@ -17,14 +17,18 @@ class ProjectDetails(Base):
     project_details = Column(String(100), nullable=True)
 
     project_client = Column(Integer, ForeignKey("client.client_id"), nullable=False)
-    project_manager = Column(Integer, ForeignKey("personal_info.id"), nullable=False)
+    project_manager = Column(String(100), ForeignKey("users.emp_id"), nullable=False)
     color_mark = Column(String(10), nullable=False)
 
     client = relationship("Client", back_populates="project_details")
-    manager = relationship("PersonalInfo", back_populates="managed_projects")
-    project_types = relationship("ProjectType", back_populates="project")
-    project_members = relationship("ProjectMember", back_populates="project")
+    manager = relationship("Users", back_populates="managed_projects")
+    project_types = relationship("ProjectType", back_populates="project" , uselist=True)
     project_progress = relationship("TimeStamp", back_populates="project")
+
+    project_duration = relationship("ProjectDuration", back_populates="project", uselist=False)
+    project_bill = relationship("ProjectBill", back_populates="project", uselist=False)
+    project_plan = relationship("ProjectPlan", back_populates="project", uselist=True)
+    project_members = relationship("ProjectMember", back_populates="project")
 
 
 class ProjectDuration(Base):
@@ -37,6 +41,7 @@ class ProjectDuration(Base):
     project_sign_date = Column(Date, nullable=False)
     project_end_date = Column(Date, nullable=False)
 
+    project = relationship("ProjectDetails", back_populates="project_duration")
 
 class ProjectBill(Base):
     __tablename__ = "project_bill"
@@ -46,6 +51,8 @@ class ProjectBill(Base):
     billable = Column(Boolean, nullable=False)
     project_value = Column (Double, nullable=False)
     project_billing_rate = Column(Double, nullable=False)
+
+    project = relationship("ProjectDetails", back_populates="project_bill")
 
 
 class ProjectPlan(Base):
@@ -58,19 +65,21 @@ class ProjectPlan(Base):
     deli_date = Column(Date, nullable=False)
     deli_details = Column(String(300), nullable=True)
 
+    project = relationship("ProjectDetails", back_populates="project_plan")
+
 class ProjectMember(Base):
     __tablename__ = "project_member"
     project_member_id = Column(Integer, primary_key=True, index=True)
 
     project_id = Column(Integer, ForeignKey(PROJECT_ID), nullable=False)
-    member_id = Column(Integer, ForeignKey("personal_info.id"), nullable=False)
+    member_id = Column(String(100), ForeignKey("users.emp_id"), nullable=False)
     position_id = Column(Integer, ForeignKey("hiring_info.position"), nullable=False)
 
     assigned_date = Column(Date, default=date.today)
     assigned_detail = Column(String(200), nullable=True)
 
     project = relationship("ProjectDetails", back_populates="project_members")
-    member = relationship("PersonalInfo", back_populates="project_members")
+    member = relationship("Users", back_populates="project_members")
     member_position = relationship("HiringInfo", back_populates="project_members_position")
 
 class ProjectType(Base):

@@ -24,10 +24,6 @@ class PersonalInfo(Base):
     date_birth = Column(Date, nullable=True)
 
     user = relationship("Users", back_populates="personal_info")
-    managed_projects = relationship("ProjectDetails", back_populates="manager")
-    project_members  = relationship("ProjectMember", back_populates="member")
-
-
 
 class AddressInfo(Base):
     __tablename__ = "address"

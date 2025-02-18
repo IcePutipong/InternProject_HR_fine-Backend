@@ -22,6 +22,9 @@ class Users(Base):
     contact_info = relationship("ContactInfo", back_populates="user", foreign_keys="[ContactInfo.emp_id]", uselist=False)
     deduction_info = relationship("DeductionInfo", back_populates="user", uselist=False)
 
+    managed_projects = relationship("ProjectDetails", back_populates="manager")
+    project_members = relationship("ProjectMember", back_populates="member")
+
     time_stamp = relationship("TimeStamp", back_populates="user")
     
 class RefreshToken(Base):
