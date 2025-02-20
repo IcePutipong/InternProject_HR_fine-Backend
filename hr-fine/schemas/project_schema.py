@@ -39,7 +39,6 @@ class SubmitProjectPlan(BaseModel):
 
 class ProjectMemberBase(BaseModel):
     member_id: str
-    position_id: int
     assigned_detail: str
 
 class SubmitProjectMember(BaseModel):
@@ -65,6 +64,7 @@ class ProjectDashboardinfo (BaseModel):
     project_name: str
     project_code: str
     color_mark: str
+    project_id: int
 
     model_config = {
         "from_attributes": True

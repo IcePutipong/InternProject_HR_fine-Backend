@@ -14,7 +14,7 @@ class ProjectDetails(Base):
     project_code = Column(String(10), nullable=False)
     project_name = Column(String(30), nullable=False)
     project_contract_no = Column(String(20), nullable=False)
-    project_details = Column(String(100), nullable=True)
+    project_details = Column(String(1000), nullable=True)
 
     project_client = Column(Integer, ForeignKey("client.client_id"), nullable=False)
     project_manager = Column(String(100), ForeignKey("users.emp_id"), nullable=False)

@@ -8,6 +8,7 @@ from pydantic import TypeAdapter
 from models.client_model import Client
 from models.project_model import ProjectDetails, ProjectBill, ProjectDuration, ProjectMember, ProjectPlan, ProjectType
 from models.auth_model import Users
+from models.user_model import HiringInfo
 
 from services.user_service import update_model_data
 
@@ -88,14 +89,23 @@ def create_project_member(db: Session, project_id: int, project_member_data: dic
     project_member = db.query(Users).filter(Users.emp_id == member_id).first()
 
     if not project_member:
-         raise HTTPException(status_code=400, detail="Invalid project member. Employee does not exist.")
+        raise HTTPException(status_code=400, detail="Invalid project member. Employee does not exist.")
 
+    hiring_info = db.query(HiringInfo).filter(HiringInfo.emp_id == member_id).first()
+
+    if not hiring_info:
+        raise HTTPException(status_code=400, detail="No hiring info found for this employee.")
+
+    project_member_data["position_id"] = hiring_info.position  
     project_member_data["project_id"] = project_id
+
     db_project_member = ProjectMember(**project_member_data)
     db.add(db_project_member)
     db.commit()
     db.refresh(db_project_member)
-    return(db_project_member)
+    
+    return db_project_member
+
 
 def create_project_plan(db: Session, project_id: int, project_plan_data: dict):
     project_plan_data["project_id"]= project_id
@@ -239,7 +249,8 @@ def get_project_dashboard(db: Session=Depends(get_session)):
         db.query(
             ProjectDetails.project_name,
             ProjectDetails.project_code,
-            ProjectDetails.color_mark
+            ProjectDetails.color_mark,
+            ProjectDetails.project_id,
         )
         .order_by(ProjectDetails.project_code)
         .all()
@@ -249,6 +260,7 @@ def get_project_dashboard(db: Session=Depends(get_session)):
             project_name = project.project_name,
             project_code = project.project_code,
             color_mark = project.color_mark,
+            project_id = project.project_id
         )
         for project in projects
     ]

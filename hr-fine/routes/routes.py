@@ -190,6 +190,7 @@ def res_submit_all_project_data(request: SubmitallProjectData, db: Session = Dep
 def fetch_project_dashboard_info(db: Session = Depends(get_session)):
     return get_project_dashboard(db)
 
-@router.get("/project/{project_id}", response_model=ProjectAllDetails, dependencies=[Depends(JWTBearer())], tags=["Project"])
+@router.get("/projects/{project_id}", response_model=ProjectAllDetails, dependencies=[Depends(JWTBearer())], tags=["Project"])
 def fetch_project_details(project_id: int, db: Session = Depends(get_session)):
+    print(f"Fetching project details for project_id: {project_id}")
     return get_project_details_by_id(db, project_id)
