@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 from fastapi import HTTPException, Depends
 from database.db import get_session
-from models.user_model import DeductionInfo, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, Position, RegistrationAddress, ContactInfo  
+from models.user_model import DeductionInfo, Department, HiringInfo, PaymentInfo, PersonalInfo, AddressInfo, Position, RegistrationAddress, ContactInfo  
 from schemas.user_schema import AddressInfoBase,ContactInfoBase, DeductionInfoBase, EmployeeDashboardInfo, EmployeeDetails, HiringInfoBase, PaymentInfoBase,PersonalInfoBase,RegistrationAddressBase, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo
 from sqlalchemy.orm import Session, joinedload
 from constants import ID_NOT_FOUND
@@ -265,12 +265,11 @@ def get_employee_details_by_id(db: Session, emp_id: str) -> EmployeeDetails:
     )
 
 def update_or_create_employee_info(db: Session, emp_id: str, model, update_data: dict, create_if_not_exists=True):
-    """ 
-    Generic function to update any employee-related model.
-    - If the record exists, it updates the existing data.
-    - If the record does not exist and `create_if_not_exists=True`, it creates a new record.
-    """
     record = db.query(model).filter(model.emp_id == emp_id).first()
+
+    user = db.query(Users).filter(Users.emp_id == emp_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail=f"Employee with emp_id '{emp_id}' not found.")
 
     if not record:
         if create_if_not_exists:
@@ -293,24 +292,55 @@ def update_or_create_employee_info(db: Session, emp_id: str, model, update_data:
 
 def update_contact_info(db: Session, emp_id: str, contact_data: dict):
     """
-    Special function to update ContactInfo and Users email together.
-    Ensures that if the email is changed, it updates both the auth table (`Users`) and `ContactInfo`.
+    Update ContactInfo excluding email.
     """
     contact_info = db.query(ContactInfo).filter(ContactInfo.emp_id == emp_id).first()
-    user = db.query(Users).filter(Users.emp_id == emp_id).first()
-
-    if not contact_info or not user:
-        raise HTTPException(status_code=404, detail=f"ContactInfo or User record not found for emp_id '{emp_id}'")
-
-    if "email" in contact_data:
-        user.email = contact_data["email"]  
-        contact_info.email = contact_data["email"]  
+    if not contact_info:
+        raise HTTPException(status_code=404, detail=f"ContactInfo record not found for emp_id '{emp_id}'")
 
     for key, value in contact_data.items():
-        if value is not None:
+        if key in ["tel", "line_id"] and value is not None:
             setattr(contact_info, key, value)
 
     db.commit()
     db.refresh(contact_info)
-    db.refresh(user)
     return contact_info
+
+
+def update_personal_info(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, PersonalInfo, update_data)
+
+def update_address_info(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, AddressInfo, update_data)
+
+def update_registration_address(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, RegistrationAddress, update_data)
+
+def update_contact_info(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, ContactInfo, update_data)
+
+def update_hiring_info(db: Session, emp_id: str, update_data: dict):
+
+    if "position" in update_data:
+        position = db.query(Position).filter(Position.id == update_data["position"]).first()
+        if not position:
+            raise HTTPException(status_code=400, detail=f"Invalid position ID: {update_data['position']}")
+        
+    if "department" in update_data:
+        department = db.query(Department).filter(Department.id == update_data["department"]).first()
+        if not department:
+            raise HTTPException(status_code=400, detail=f"Invalid department ID: {update_data['department']}")
+        
+    if "start_date" in update_data and "terminate_date" in update_data:
+        if update_data["terminate_date"] and update_data["terminate_date"] < update_data["start_date"]:
+            raise HTTPException(status_code=400, detail="Terminate date cannot be before start date.")
+
+
+    return update_or_create_employee_info(db, emp_id, HiringInfo, update_data)
+
+def update_payment_info(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, PaymentInfo, update_data)
+
+def update_deduction_info(db: Session, emp_id: str, update_data: dict):
+    return update_or_create_employee_info(db, emp_id, DeductionInfo, update_data)
+

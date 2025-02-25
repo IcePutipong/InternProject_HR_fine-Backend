@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 from models.client_model import Client
 from models.project_model import ProjectDetails, ProjectBill, ProjectDuration, ProjectMember, ProjectPlan, ProjectType
 from models.auth_model import Users
-from models.user_model import HiringInfo
+from models.user_model import HiringInfo, PersonalInfo, Position
 
 from services.user_service import update_model_data
 
@@ -289,3 +289,28 @@ def get_project_details_by_id(db: Session, project_id: int) -> ProjectAllDetails
         project_plan=[ProjectPlanBase(**plan.__dict__) for plan in project.project_plan] if project.project_plan else [],
         project_member=[ProjectMemberBase(**member.__dict__) for member in project.project_members] if project.project_members else [],
     )
+
+def fetch_managers(db: Session = Depends(get_session)):
+    managers = (
+        db.query(
+            Users.emp_id,
+            PersonalInfo.thai_name.label("name"),  # Fetch English name instead
+            HiringInfo.position.label("position_id"),
+            Position.position.label("position_name"),
+        )
+        .join(HiringInfo, Users.emp_id == HiringInfo.emp_id)
+        .join(Position, HiringInfo.position == Position.id)
+        .join(PersonalInfo, Users.emp_id == PersonalInfo.emp_id)  # Correct join
+        .filter(Position.id == 10)  # Fetch only employees with position_id 10 (Manager)
+        .all()
+    )
+
+    return [
+        {
+            "emp_id": manager.emp_id,
+            "name": manager.name,  # Using English name to avoid Thai name error
+            "position_id": manager.position_id,
+            "position_name": manager.position_name,
+        }
+        for manager in managers
+    ]

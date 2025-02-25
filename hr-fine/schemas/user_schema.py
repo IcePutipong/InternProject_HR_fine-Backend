@@ -185,7 +185,6 @@ class UpdateRegistrationAddress(BaseModel):
         from_attributes = True
 
 class UpdateContactInfo(BaseModel):
-    email: Optional[EmailStr] = None  #
     tel: Optional[str] = None
     line_id: Optional[str] = None
 

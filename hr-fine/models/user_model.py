@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, Column, Integer, String, Date, DateTime, ForeignKey, Float, Double
+from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String, Date, DateTime, ForeignKey, Float, Double
 from database.db import Base
 from sqlalchemy.orm import relationship
 from models.project_model import ProjectDetails
@@ -93,7 +93,7 @@ class HiringInfo(Base):
     working_location = Column(String(50), nullable=False)
     contract_type = Column(String(50), nullable=False)
     department  = Column(Integer, ForeignKey("department.id"), nullable=False)
-    position  = Column(Integer, ForeignKey("position.id"), nullable=False)
+    position = Column(Integer, ForeignKey("position.id", onupdate="CASCADE", ondelete="CASCADE"), nullable=False)    
     manager = Column(String(100), nullable=False)
 
     user = relationship("Users", back_populates="hiring_info")
