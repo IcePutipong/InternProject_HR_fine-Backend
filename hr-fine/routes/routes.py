@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends,HTTPException, Path
 from sqlalchemy.orm import Session
 
-from utils.jwt_bearer import JWTBearer
+from utils.jwt_bearer import JWTBearer, decode_jwt
 from database.db import get_session
 from schemas.auth_schema import UserLogin, UserRegister, ChangePassword
 from services import auth_service
@@ -13,11 +13,15 @@ from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAl
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
 from schemas.project_schema import  GenerateProjectCode,  ProjectAllDetails, SubmitallProjectData, ProjectDashboardinfo
+from schemas.timesheet_schemas import TimeStampBase
 
-from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_contact_info, update_or_create_employee_info
+from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_address_info, update_contact_info, update_deduction_info, update_hiring_info, update_or_create_employee_info, update_payment_info, update_personal_info, update_registration_address
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
-from services.project_service import generate_project_code, get_project_dashboard, get_project_details_by_id, submit_all_project_data
+from services.project_service import fetch_managers, generate_project_code, get_project_dashboard, get_project_details_by_id, submit_all_project_data
+from services.timesheet_service import stamp_timesheet
+
+
 
 router = APIRouter(
     prefix="/hr-fine",
@@ -65,15 +69,15 @@ def fetch_employee_details(emp_id: str, db: Session = Depends(get_session)):
 
 @router.put("/personal-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_personal_info(emp_id: str, data: UpdatePersonalInfo, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, PersonalInfo, data.model_dump(exclude_unset=True))
+    return update_personal_info(db, emp_id, data.model_dump(exclude_unset=True))
 
 @router.put("/address-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_address_info(emp_id: str, data: UpdateAddressInfo, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, AddressInfo, data.model_dump(exclude_unset=True))
+    return update_address_info(db, emp_id, data.model_dump(exclude_unset=True))
 
 @router.put("/registration-address/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_registration_address(emp_id: str, data: UpdateRegistrationAddress, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, RegistrationAddress, data.model_dump(exclude_unset=True))
+    return update_registration_address(db, emp_id, data.model_dump(exclude_unset=True))
 
 @router.put("/contact-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_contact_info(emp_id: str, data: UpdateContactInfo, db: Session = Depends(get_session)):
@@ -81,16 +85,15 @@ def edit_contact_info(emp_id: str, data: UpdateContactInfo, db: Session = Depend
 
 @router.put("/hiring-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_hiring_info(emp_id: str, data: UpdateHiringInfo, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, HiringInfo, data.model_dump(exclude_unset=True))
+    return update_hiring_info(db, emp_id, data.model_dump(exclude_unset=True))
 
 @router.put("/payment-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_payment_info(emp_id: str, data: UpdatePaymentInfo, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, PaymentInfo, data.model_dump(exclude_unset=True))
+    return update_payment_info(db, emp_id, data.model_dump(exclude_unset=True))
 
 @router.put("/deduction-info/{emp_id}", dependencies=[Depends(JWTBearer())], tags=["Employee"])
 def edit_deduction_info(emp_id: str, data: UpdateDeductionInfo, db: Session = Depends(get_session)):
-    return update_or_create_employee_info(db, emp_id, DeductionInfo, data.model_dump(exclude_unset=True))
-
+    return update_deduction_info(db, emp_id, data.model_dump(exclude_unset=True))
 
 ###Optional Data
 @router.post("/optional/add-company", dependencies=[Depends(JWTBearer())], tags=["Optional Data"])
@@ -194,3 +197,21 @@ def fetch_project_dashboard_info(db: Session = Depends(get_session)):
 def fetch_project_details(project_id: int, db: Session = Depends(get_session)):
     print(f"Fetching project details for project_id: {project_id}")
     return get_project_details_by_id(db, project_id)
+
+@router.get("/managers", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def get_managers(db: Session = Depends(get_session)):
+    return fetch_managers(db)
+
+
+##Time Stamp
+@router.post("/project/submit-time-stamp", dependencies=[Depends(JWTBearer())], tags=["TimeStamp"])
+def submit_time_stamp(request: TimeStampBase, db: Session = Depends(get_session), token: str = Depends(JWTBearer())):
+    """Extracts emp_id from the decoded JWT token and submits a time stamp."""
+
+    decoded_token = decode_jwt(token)  
+
+    emp_id = decoded_token.get("emp_id") 
+    if not emp_id:
+        raise HTTPException(status_code=400, detail="Invalid token: Missing emp_id")
+
+    return stamp_timesheet(request, emp_id, db)  
