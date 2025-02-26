@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import APIRouter, Depends,HTTPException, Path
 from sqlalchemy.orm import Session
 
@@ -8,7 +9,7 @@ from services import auth_service
 
 from models.user_model import AddressInfo, DeductionInfo, HiringInfo, PaymentInfo,  PersonalInfo, RegistrationAddress
 
-from typing import List
+from typing import List, Optional
 from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
@@ -19,7 +20,7 @@ from services.user_service import get_all_employees_dashboard, get_employee_deta
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
 from services.project_service import fetch_managers, generate_project_code, get_project_dashboard, get_project_details_by_id, submit_all_project_data
-from services.timesheet_service import stamp_timesheet
+from services.timesheet_service import delete_time_stamp, edit_time_stamp, fetch_time_stamps, stamp_timesheet
 
 
 
@@ -215,3 +216,19 @@ def submit_time_stamp(request: TimeStampBase, db: Session = Depends(get_session)
         raise HTTPException(status_code=400, detail="Invalid token: Missing emp_id")
 
     return stamp_timesheet(request, emp_id, db)  
+
+@router.put("/project/edit-time-stamp/{stamp_id}", tags=["TimeStamp"])
+def edit_time_stamp_endpoint(stamp_id: int, stamp_data: TimeStampBase, db: Session = Depends(get_session), auth: str = Depends(JWTBearer())):
+    return edit_time_stamp(stamp_id, stamp_data, db, auth)
+
+@router.delete("/project/delete-time-stamp/{stamp_id}", tags=["TimeStamp"])
+def delete_time_stamp_endpoint(stamp_id: int, db: Session = Depends(get_session), auth: str = Depends(JWTBearer())):
+    return delete_time_stamp(stamp_id, db, auth)
+
+@router.get("/project/fetch-time-stamps", tags=["TimeStamp"])
+def fetch_time_stamps_endpoint(
+    db: Session = Depends(get_session),
+    auth: str = Depends(JWTBearer()),
+    target_date: Optional[date] = None,
+):
+    return fetch_time_stamps(db, auth, target_date)
