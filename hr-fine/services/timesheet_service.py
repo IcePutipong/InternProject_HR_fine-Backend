@@ -5,10 +5,26 @@ from fastapi import HTTPException, Depends
 from database.db import get_session
 from sqlalchemy.orm import Session, joinedload
 
-from schemas.timesheet_schemas import TimeStampBase
+from schemas.timesheet_schemas import CalculateTotalTime, TimeStampBase, TimeStampResponseSchema, TimeStampSchema, WeekRangeSchema
 from models.timesheet_model import TimeStamp
 
 from utils.jwt_bearer import JWTBearer, decode_jwt
+
+from constants import EMP_ID_NOT_EXIST
+
+def calculate_total_time(request: CalculateTotalTime):
+    if request.end_time <= request.start_time:
+        raise HTTPException(status_code=400, detail="Start time must be start before finish time.")
+
+    start_dt = datetime.combine(datetime.min, request.start_time)
+    end_dt = datetime.combine(datetime.min, request.end_time)
+
+    duration = end_dt - start_dt 
+
+    hours, remainder = divmod(duration.seconds, 3600)
+    minutes, _ = divmod(remainder, 60)
+
+    return {"total_time": f"{hours:02}:{minutes:02}"}
 
 def stamp_timesheet(stamp_data: TimeStampBase, emp_id: str, db: Session = Depends(get_session)):
 
@@ -82,7 +98,7 @@ def delete_time_stamp(stamp_id: int, db: Session = Depends(get_session), auth: s
     emp_id = payload.get("emp_id")  
 
     if not emp_id:
-        raise HTTPException(status_code=401, detail="Invalid token: Missing emp_id")
+        raise HTTPException(status_code=401, detail=EMP_ID_NOT_EXIST)
     
     if time_stamp.emp_id != emp_id:
         raise HTTPException(
@@ -112,7 +128,7 @@ def edit_time_stamp(stamp_id: int, stamp_data: TimeStampBase, db: Session = Depe
 
     emp_id = decode_jwt(auth).get("emp_id")
     if not emp_id:
-        raise HTTPException(status_code=401, detail="Invalid token: Missing emp_id")
+        raise HTTPException(status_code=401, detail=EMP_ID_NOT_EXIST)
 
     if time_stamp.emp_id != emp_id:
         raise HTTPException(status_code=403, detail="You are not authorized to edit this timestamp.")
@@ -149,18 +165,15 @@ def fetch_time_stamps(
     db: Session = Depends(get_session),
     auth: str = Depends(JWTBearer()),
     target_date: Optional[date] = None,
-    week_offset: Optional[int] = 0
 ):
     """Fetches all timestamps for a specific week (defaults to current week)."""
 
     emp_id = decode_jwt(auth).get("emp_id")
     if not emp_id:
-        raise HTTPException(status_code=401, detail="Invalid token: Missing emp_id")
+        raise HTTPException(status_code=401, detail=EMP_ID_NOT_EXIST)
 
     if not target_date:
         target_date = datetime.today().date()
-
-    target_date = target_date + timedelta(weeks=week_offset)
 
     start_of_week = target_date - timedelta(days=target_date.weekday()) 
     end_of_week = start_of_week + timedelta(days=6)  
@@ -176,24 +189,28 @@ def fetch_time_stamps(
         .all()
     )
 
-    return {
-        "week_range": {
-            "start_date": start_of_week.strftime('%Y-%m-%d'),
-            "end_date": end_of_week.strftime('%Y-%m-%d')
-        },
-        "time_stamps": [
-            {
-                "stamp_id": ts.stamp_id,
-                "emp_id": ts.emp_id,
-                "project_id": ts.project_id,
-                "stamp_date": ts.stamp_date.strftime('%Y-%m-%d'),
-                "start_time": ts.start_time.strftime('%H:%M'),
-                "end_time": ts.end_time.strftime('%H:%M'),
-                "stamp_details": ts.stamp_details,
-                "disbursement": ts.disbursement,
-                "OverTime": ts.OverTime,
-                "travel_expenses": ts.travel_expenses
-            }
+    return TimeStampResponseSchema(
+        week_range=WeekRangeSchema(
+            start_date=start_of_week.strftime('%Y-%m-%d'),
+            end_date=end_of_week.strftime('%Y-%m-%d')
+        ),
+        time_stamps=[
+            TimeStampSchema(
+                stamp_id=ts.stamp_id,
+                emp_id=ts.emp_id,
+                project_id=ts.project_id,
+                project_code=ts.project.project_code if ts.project else None,
+                project_name = ts.project.project_name if ts.project else None,
+                period_number=ts.period.period_no if ts.period else None,             
+                stamp_date=ts.stamp_date,
+                start_time=ts.start_time,
+                total_time = ts.total_time,
+                end_time=ts.end_time,
+                stamp_details=ts.stamp_details,
+                disbursement=ts.disbursement,
+                OverTime=ts.OverTime,
+                travel_expenses=ts.travel_expenses
+            )
             for ts in time_stamps
         ]
-    }
+    )
