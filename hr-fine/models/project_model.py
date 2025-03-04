@@ -65,6 +65,7 @@ class ProjectPlan(Base):
     deli_details = Column(String(300), nullable=True)
 
     project = relationship("ProjectDetails", back_populates="project_plan")
+    period_progress = relationship("TimeStamp", back_populates="period")
 
 class ProjectMember(Base):
     __tablename__ = "project_member"

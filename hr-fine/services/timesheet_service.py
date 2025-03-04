@@ -71,13 +71,20 @@ def stamp_timesheet(stamp_data: TimeStampBase, emp_id: str, db: Session = Depend
             status_code=400,
             detail="If OverTime or travel_expenses is True, work must be scheduled after 18:00."
         )
+    
+    total_time_data = calculate_total_time(
+        CalculateTotalTime(start_time=stamp_data.start_time, end_time=stamp_data.end_time)
+    )
+    total_time = total_time_data["total_time"]
 
     new_stamp = TimeStamp(
         emp_id=emp_id,
         project_id=stamp_data.project_id,
+        period_id= stamp_data.period_id,
         stamp_date=stamp_data.stamp_date,
         start_time=stamp_data.start_time,
         end_time=stamp_data.end_time,
+        total_time=total_time,
         stamp_details=stamp_data.stamp_details,
         disbursement=stamp_data.disbursement,
         OverTime=stamp_data.OverTime,
@@ -151,8 +158,16 @@ def edit_time_stamp(stamp_id: int, stamp_data: TimeStampBase, db: Session = Depe
 
     if (stamp_data.OverTime or stamp_data.travel_expenses) and not (stamp_data.start_time >= overtime_start or stamp_data.end_time >= overtime_start):
         raise HTTPException(status_code=400, detail="OverTime or travel expenses must be scheduled after 18:00.")
+    
+    total_time: Optional[str] = None
+    if stamp_data.start_time and stamp_data.end_time:
+        total_time_request = CalculateTotalTime(start_time=stamp_data.start_time, end_time=stamp_data.end_time)
+        total_time = calculate_total_time(total_time_request)["total_time"]
 
     update_fields = {key: value for key, value in stamp_data.model_dump().items() if value is not None}
+    if total_time:
+        update_fields["total_time"] = total_time  
+
     for key, value in update_fields.items():
         setattr(time_stamp, key, value)
 
@@ -201,6 +216,7 @@ def fetch_time_stamps(
                 project_id=ts.project_id,
                 project_code=ts.project.project_code if ts.project else None,
                 project_name = ts.project.project_name if ts.project else None,
+                period_id = ts.period.id if ts.period else None,
                 period_number=ts.period.period_no if ts.period else None,             
                 stamp_date=ts.stamp_date,
                 start_time=ts.start_time,

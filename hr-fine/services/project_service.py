@@ -3,8 +3,8 @@ from fastapi import HTTPException, Depends
 from database.db import get_session
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.orm.exc import NoResultFound
-
 from pydantic import TypeAdapter
+
 from models.client_model import Client
 from models.project_model import ProjectDetails, ProjectBill, ProjectDuration, ProjectMember, ProjectPlan, ProjectType
 from models.auth_model import Users
@@ -12,8 +12,12 @@ from models.user_model import HiringInfo, PersonalInfo, Position
 
 from services.user_service import update_model_data
 
-from schemas.project_schema import GenerateProjectCode, ProjectAllDetails, ProjectBillBase, ProjectDetailsBase, ProjectDurationBase, ProjectMemberBase, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
+from schemas.project_schema import GenerateProjectCode, ProjectAllDetails, ProjectAssigned, ProjectBillBase, ProjectDetailsBase, ProjectDurationBase, ProjectMemberBase, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
 from schemas.optional_schema import AddProjectType
+
+from utils.jwt_bearer import JWTBearer, decode_jwt
+
+from constants import EMP_ID_NOT_EXIST
 
 def update_model_data(model, data: Dict):
     for key, value in data.items():
@@ -308,9 +312,47 @@ def fetch_managers(db: Session = Depends(get_session)):
     return [
         {
             "emp_id": manager.emp_id,
-            "name": manager.name,  # Using English name to avoid Thai name error
+            "name": manager.name,  
             "position_id": manager.position_id,
             "position_name": manager.position_name,
         }
         for manager in managers
+    ]
+
+def get_project_assigned(
+        db: Session = Depends(get_session), 
+        auth: str = Depends(JWTBearer()),
+    ):
+    
+    emp_id = decode_jwt(auth).get("emp_id")
+    if not emp_id: 
+        raise HTTPException(status_code=401, detail=EMP_ID_NOT_EXIST)
+
+    projects = (
+        db.query(ProjectDetails)
+        .join(ProjectMember, ProjectDetails.project_id == ProjectMember.project_id) 
+        .filter(ProjectMember.member_id == emp_id)  
+        .options(joinedload(ProjectDetails.project_plan))  
+        .order_by(ProjectDetails.project_code)
+        .all()
+    )
+
+    return [
+        ProjectAssigned(
+            project_name=project.project_name,
+            project_code=project.project_code,
+            color_mark=project.color_mark,
+            project_id=project.project_id,
+            project_plan=[
+                {
+                    "id": plan.id,
+                    "period_no": plan.period_no,
+                    "deli_duration": plan.deli_duration,
+                    "deli_date": plan.deli_date,
+                    "deli_details": plan.deli_details,
+                }
+                for plan in project.project_plan 
+            ],
+        )
+        for project in projects
     ]

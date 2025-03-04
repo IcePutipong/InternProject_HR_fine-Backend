@@ -70,6 +70,22 @@ class ProjectDashboardinfo (BaseModel):
         "from_attributes": True
     }
 
+class FetchProjectPlan (BaseModel):
+    id: int
+    period_no: int
+    deli_details: Optional[str] = None
+
+class ProjectAssigned (BaseModel):
+    project_name: str
+    project_code: str
+    color_mark: str
+    project_id: int
+    project_plan: List[FetchProjectPlan]
+
+    model_config = {
+        "from_attributes": True
+    }
+
 class ProjectAllDetails(BaseModel):
     project_id : int
     project_details: ProjectDetailsBase

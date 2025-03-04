@@ -13,14 +13,14 @@ from typing import List, Optional
 from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
-from schemas.project_schema import  GenerateProjectCode,  ProjectAllDetails, SubmitallProjectData, ProjectDashboardinfo
-from schemas.timesheet_schemas import TimeStampBase
+from schemas.project_schema import  GenerateProjectCode,  ProjectAllDetails, ProjectAssigned, SubmitallProjectData, ProjectDashboardinfo
+from schemas.timesheet_schemas import CalculateTotalTime, TimeStampBase, TimeStampResponseSchema
 
 from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_address_info, update_contact_info, update_deduction_info, update_hiring_info, update_or_create_employee_info, update_payment_info, update_personal_info, update_registration_address
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
-from services.project_service import fetch_managers, generate_project_code, get_project_dashboard, get_project_details_by_id, submit_all_project_data
-from services.timesheet_service import delete_time_stamp, edit_time_stamp, fetch_time_stamps, stamp_timesheet
+from services.project_service import fetch_managers, generate_project_code, get_project_assigned, get_project_dashboard, get_project_details_by_id, submit_all_project_data
+from services.timesheet_service import calculate_total_time, delete_time_stamp, edit_time_stamp, fetch_time_stamps, stamp_timesheet
 
 
 
@@ -203,9 +203,20 @@ def fetch_project_details(project_id: int, db: Session = Depends(get_session)):
 def get_managers(db: Session = Depends(get_session)):
     return fetch_managers(db)
 
+@router.get("/timesheet/projects", response_model=List[ProjectAssigned], tags=["Project"])
+def get_assigned_projects(
+    db: Session = Depends(get_session),
+    auth: str = Depends(JWTBearer())
+):
+    try:
+        return get_project_assigned(db, auth)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 ##Time Stamp
-@router.post("/project/submit-time-stamp", dependencies=[Depends(JWTBearer())], tags=["TimeStamp"])
+@router.post("/time-stamp/submit-time-stamp", dependencies=[Depends(JWTBearer())], tags=["TimeStamp"])
 def submit_time_stamp(request: TimeStampBase, db: Session = Depends(get_session), token: str = Depends(JWTBearer())):
     """Extracts emp_id from the decoded JWT token and submits a time stamp."""
 
@@ -217,18 +228,25 @@ def submit_time_stamp(request: TimeStampBase, db: Session = Depends(get_session)
 
     return stamp_timesheet(request, emp_id, db)  
 
-@router.put("/project/edit-time-stamp/{stamp_id}", tags=["TimeStamp"])
+@router.put("/time-stamp/edit-time-stamp/{stamp_id}", tags=["TimeStamp"])
 def edit_time_stamp_endpoint(stamp_id: int, stamp_data: TimeStampBase, db: Session = Depends(get_session), auth: str = Depends(JWTBearer())):
     return edit_time_stamp(stamp_id, stamp_data, db, auth)
 
-@router.delete("/project/delete-time-stamp/{stamp_id}", tags=["TimeStamp"])
+@router.delete("/time-stamp/delete-time-stamp/{stamp_id}", tags=["TimeStamp"])
 def delete_time_stamp_endpoint(stamp_id: int, db: Session = Depends(get_session), auth: str = Depends(JWTBearer())):
     return delete_time_stamp(stamp_id, db, auth)
 
-@router.get("/project/fetch-time-stamps", tags=["TimeStamp"])
+@router.get("/time-stamp/fetch-time-stamps", tags=["TimeStamp"])
 def fetch_time_stamps_endpoint(
     db: Session = Depends(get_session),
     auth: str = Depends(JWTBearer()),
     target_date: Optional[date] = None,
 ):
-    return fetch_time_stamps(db, auth, target_date)
+    return fetch_time_stamps( db, auth, target_date)
+
+@router.post("/time-stamp/calculate-total-time", tags=["TimeStamp"])
+def calculate_total_time_endpoint(
+    request: CalculateTotalTime,
+    db: Session = Depends(get_session)
+):
+    return calculate_total_time(request, db)

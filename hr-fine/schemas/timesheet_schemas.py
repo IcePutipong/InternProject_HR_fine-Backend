@@ -4,6 +4,7 @@ from typing import List, Optional
 
 class TimeStampBase(BaseModel):
     project_id: int
+    period_id:int   
     stamp_date: date
     start_time: time
     end_time: time
@@ -12,29 +13,9 @@ class TimeStampBase(BaseModel):
     OverTime: bool = False
     travel_expenses: bool = False
 
-    @field_validator("start_time", "end_time", mode="before")
-    @classmethod
-    def validate_time(cls, v):
-        if isinstance(v, str):  
-            try:
-                return datetime.strptime(v, "%H:%M").time()  
-            except ValueError:
-                raise ValueError("Invalid time format. Use HH:MM (e.g., 09:30)")
-        return v  
-
 class CalculateTotalTime(BaseModel):
     start_time: time
     end_time: time
-
-    @field_validator("start_time", "end_time", mode="before")
-    @classmethod
-    def validate_time(cls, v):
-        if isinstance(v, str):  
-            try:
-                return datetime.strptime(v, "%H:%M").time()  
-            except ValueError:
-                raise ValueError("Invalid time format. Use HH:MM (e.g., 09:30)")
-        return v 
     
 class FetchTimeSheet(BaseModel):     
     project_id: int
@@ -46,22 +27,13 @@ class FetchTimeSheet(BaseModel):
     OverTime: bool = False
     travel_expenses: bool = False
 
-    @field_validator("start_time", "end_time", mode="before")
-    @classmethod
-    def validate_time(cls, v):
-        if isinstance(v, str):  
-            try:
-                return datetime.strptime(v, "%H:%M").time()  
-            except ValueError:
-                raise ValueError("Invalid time format. Use HH:MM (e.g., 09:30)")
-        return v  
-
 class TimeStampSchema(BaseModel):
     stamp_id: int
     emp_id: str
     project_id: Optional[int]
     project_code: str
     project_name: str
+    period_id: int  
     period_number: Optional[int]
     stamp_date: date
     start_time: time

@@ -193,7 +193,6 @@ def change_temporary_password(emp_id: str, new_password: str, session: Session =
 
     return {"message": "Password reset successfully"}
 
-
 def access_refresh_token(refresh_token: str, db: Session = Depends(get_session)):
     try:
         payload = jwt.decode(refresh_token, JWT_REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
@@ -219,6 +218,3 @@ def access_refresh_token(refresh_token: str, db: Session = Depends(get_session))
     db.add(token_record)
     db.commit
     db.refresh(token_record)
-
-
-
