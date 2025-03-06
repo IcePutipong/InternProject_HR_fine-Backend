@@ -13,13 +13,13 @@ from typing import List, Optional
 from schemas.user_schema import EmployeeDashboardInfo, EmployeeDetails, SubmitAllInfoData, SubmitHiringInfo, SubmitPaymentInfo, SubmitUserInfo, UpdateAddressInfo, UpdateContactInfo, UpdateDeductionInfo, UpdateHiringInfo, UpdatePaymentInfo, UpdatePersonalInfo, UpdateRegistrationAddress
 from schemas.optional_schema import AddCompany, AddContractType, AddDepartment, AddEmployeeType, AddPosition, AddProjectType, AddWorkingStatus, EditPosition, FetchCompany, FetchContractType, FetchDepartment, FetchEmployeeType, FetchPosition, FetchWorkingStatus, ResProjectType
 from schemas.client_schema import ClientDashboardInfo, CreateClient, EditClient, GenerateClientCode
-from schemas.project_schema import  GenerateProjectCode,  ProjectAllDetails, ProjectAssigned, SubmitallProjectData, ProjectDashboardinfo
+from schemas.project_schema import  GenerateProjectCode, PlanEdit,  ProjectAllDetails, ProjectAssigned, ProjectDetailEdit, ProjectDurationEdit, ProjectMemberBase, ProjectMemberEdit, SubmitallProjectData, ProjectDashboardinfo
 from schemas.timesheet_schemas import CalculateTotalTime, TimeStampBase, TimeStampResponseSchema
 
 from services.user_service import get_all_employees_dashboard, get_employee_details_by_id, submit_all_user_data, update_address_info, update_contact_info, update_deduction_info, update_hiring_info, update_or_create_employee_info, update_payment_info, update_personal_info, update_registration_address
 from services.optional_service import add_company, add_contract_type, add_department, add_employee_type, add_position, create_project_type, edit_position, add_working_status, response_project_type, fetch_company, fetch_contract, fetch_department, fetch_emp_type, fetch_working_status, fetch_positions
 from services.client_service import create_client_info, get_client_dashboard, edit_client_info
-from services.project_service import fetch_managers, generate_project_code, get_project_assigned, get_project_dashboard, get_project_details_by_id, submit_all_project_data
+from services.project_service import create_project_member, delete_project_member, fetch_managers, generate_project_code, get_project_assigned, get_project_dashboard, get_project_details_by_id, submit_all_project_data, update_member, update_plan, update_project_details, update_project_durations
 from services.timesheet_service import calculate_total_time, delete_time_stamp, edit_time_stamp, fetch_time_stamps, stamp_timesheet
 
 
@@ -190,6 +190,22 @@ def res_generate_project_code(request:GenerateProjectCode, db: Session = Depends
 def res_submit_all_project_data(request: SubmitallProjectData, db: Session = Depends(get_session)):
     return submit_all_project_data(db, request)
 
+@router.post("project/add-project-member/{project_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def add_project_member(
+    project_id: int, 
+    member_data: ProjectMemberBase, 
+    db: Session = Depends(get_session)
+):
+    try:
+        added_member = create_project_member(db, project_id, member_data.model_dump())
+        return {
+            "status": "success",
+            "message": "Project member added successfully",
+            "data": added_member.__dict__
+        }
+    except HTTPException as e:
+        return {"status": "error", "message": str(e.detail)}
+
 @router.get("/projects", response_model=List[ProjectDashboardinfo], dependencies=[Depends(JWTBearer())], tags=["Project"])
 def fetch_project_dashboard_info(db: Session = Depends(get_session)):
     return get_project_dashboard(db)
@@ -214,6 +230,48 @@ def get_assigned_projects(
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.put("/edit-project-details/{project_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def edit_project_details(
+    request: ProjectDetailEdit,
+    project_id: int,
+    db: Session = Depends(get_session),
+):
+    return update_project_details(project_id,request, db)
+
+@router.put("/edit-project-durations/{project_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def edit_project_durations(
+    request: ProjectDurationEdit,
+    project_id: int,
+    db: Session = Depends(get_session),
+):
+    return update_project_durations(project_id,request, db)
+
+@router.put("/edit_plan/{project_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def edit_plan(
+    request: PlanEdit,
+    project_id: int,
+    db: Session = Depends(get_session)
+): 
+    return update_plan(project_id,request, db)
+
+@router.put("/edit-member/{project_member_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def edit_member(
+    request: ProjectMemberEdit,
+    project_member_id: int,
+    db: Session = Depends(get_session)
+):
+    return update_member(project_member_id, request, db)
+
+@router.delete("/delete_member/{project_id}/{project_member_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
+def delete_member(
+    project_id: int,
+    project_member_id: int,
+    db:Session = Depends(get_session)
+):
+    return delete_project_member(project_id, project_member_id, db)
+
+
 
 ##Time Stamp
 @router.post("/time-stamp/submit-time-stamp", dependencies=[Depends(JWTBearer())], tags=["TimeStamp"])

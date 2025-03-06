@@ -12,7 +12,7 @@ from models.user_model import HiringInfo, PersonalInfo, Position
 
 from services.user_service import update_model_data
 
-from schemas.project_schema import GenerateProjectCode, ProjectAllDetails, ProjectAssigned, ProjectBillBase, ProjectDetailsBase, ProjectDurationBase, ProjectMemberBase, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
+from schemas.project_schema import GenerateProjectCode, PlanEdit, ProjectAllDetails, ProjectAssigned, ProjectBillBase, ProjectDetailEdit, ProjectDetailsBase, ProjectDurationBase, ProjectDurationEdit, ProjectMemberBase, ProjectMemberEdit, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
 from schemas.optional_schema import AddProjectType
 
 from utils.jwt_bearer import JWTBearer, decode_jwt
@@ -298,14 +298,14 @@ def fetch_managers(db: Session = Depends(get_session)):
     managers = (
         db.query(
             Users.emp_id,
-            PersonalInfo.thai_name.label("name"),  # Fetch English name instead
+            PersonalInfo.thai_name.label("name"),  
             HiringInfo.position.label("position_id"),
             Position.position.label("position_name"),
         )
         .join(HiringInfo, Users.emp_id == HiringInfo.emp_id)
         .join(Position, HiringInfo.position == Position.id)
-        .join(PersonalInfo, Users.emp_id == PersonalInfo.emp_id)  # Correct join
-        .filter(Position.id == 10)  # Fetch only employees with position_id 10 (Manager)
+        .join(PersonalInfo, Users.emp_id == PersonalInfo.emp_id)  
+        .filter(Position.id == 10)  
         .all()
     )
 
@@ -356,3 +356,167 @@ def get_project_assigned(
         )
         for project in projects
     ]
+
+def update_project_details(
+        project_id: int, 
+        project_data: ProjectDetailEdit,
+        db:Session = Depends(get_session),
+):
+    project_details = db.query(ProjectDetails).filter(ProjectDetails.project_id == project_id).first()
+    project_bills = db.query(ProjectBill).filter(ProjectBill.project_id == project_id).first()
+
+    if not project_details: 
+        raise HTTPException(status_code=404, detail=f"Project Details with project_id '{project_id}', not found.")
+    
+    if not project_bills: 
+        raise HTTPException(status_code=404, detail=f"Project Bills with project_id '{project_id}', not found.")
+    
+    try:
+        update_model_data(project_details, project_data.project_details.model_dump(exclude_unset=True))
+        update_model_data(project_bills, project_data.project_bills.model_dump(exclude_unset=True))
+
+        db.commit()
+        db.refresh(project_details)
+        db.refresh(project_bills)
+
+        return {
+            "status": "success",
+            "message": "Project details and billing information updated successfully",
+            "data": {
+                "project_details": project_details.__dict__,
+                "project_bill": project_bills.__dict__,
+            }
+        }
+
+
+    except Exception as e :
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")
+    
+def update_project_durations(
+        project_id: int, 
+        project_data: ProjectDurationEdit,
+        db:Session = Depends(get_session),
+):
+    project_duration = db.query(ProjectDuration).filter(ProjectDuration.project_id == project_id).first()
+
+    if not project_duration:
+        raise HTTPException(status_code=404, detail=f"Project Durations with project_id '{project_id}', not found.")
+    
+    try:
+        update_model_data(project_duration, project_data.project_durations.model_dump())
+
+        db.commit()
+        db.refresh(project_duration)
+
+        return {
+            "status": "success",
+            "message": "Project durations information updated successfully",
+            "data": {
+                "project_durations": project_duration.__dict__,
+            }
+        }
+
+
+    except Exception as e :
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")
+    
+def update_plan(
+        project_id: int,
+        project_data: PlanEdit,
+        db: Session = Depends(get_session)
+):
+    project_plan = db.query(ProjectPlan).filter(ProjectPlan.project_id == project_id, ProjectPlan.period_no == project_plan.period_no).first()
+
+    if not project_plan:
+        last_period = db.query(ProjectPlan).filter(ProjectPlan.project_id == project_id).order_by(ProjectPlan.period_no.desc()).first()
+        new_period_no = last_period.period_no + 1 if last_period else 1   
+
+        project_plan = ProjectPlan(
+            project_id=project_id,
+            period_no=new_period_no,
+            deli_duration=project_data.project_plans.deli_duration,
+            deli_date=project_data.project_plans.deli_date,
+            deli_details=project_data.project_plans.deli_details
+        )
+        db.add(project_plan)
+
+    else:
+        update_model_data(project_plan, project_data.project_plans.model_dump(exclude_unset=True))
+
+    try: 
+        update_model_data(project_plan, project_data.project_plans.model_dump(exclude_unset=True))
+        db.commit()
+        db.refresh(project_plan)
+
+        return {
+            "status": "success",
+            "message": "Project durations information updated successfully",
+            "data": {
+                "project_plan": project_plan.__dict__,
+            }
+        }
+
+
+    except Exception as e :
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")
+
+def update_member(
+        project_member_id: int,
+        project_data: ProjectMemberEdit,
+        db: Session = Depends(get_session)
+):
+    project_member = db.query(ProjectMember).filter(
+        ProjectMember.project_member_id == project_member_id
+    ).first()
+
+    if not project_member:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"Project Member with project_member_id '{project_member_id}' not found."
+        )
+
+    new_member_id = project_data.project_member.member_id
+    new_hiring_info = db.query(HiringInfo).filter(HiringInfo.emp_id == new_member_id).first()
+
+    if not new_hiring_info:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Member with emp_id '{new_member_id}' not found in HiringInfo."
+        )
+
+    try:
+        project_member.member_id = new_member_id
+        project_member.position_id = new_hiring_info.position  
+
+        update_model_data(project_member, project_data.project_member.model_dump(exclude_unset=True))
+        db.commit()
+        db.refresh(project_member)
+
+        return {"message": "Project member updated successfully", "data": project_member}
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update project member: {str(e)}")
+    
+def delete_project_member(
+        project_id: int,
+        project_member_id: int,
+        db:Session = Depends(get_session)
+):
+    project_member = db.query(ProjectMember).filter(ProjectMember.project_id == project_id, ProjectMember.project_member_id == project_member_id).first()
+
+    if not project_member:
+        raise HTTPException(status_code=404, detail=f"Project member with project_member_id '{project_member_id}' not found.")
+     
+    try:
+        db.delete(project_member)
+        db.commit()
+        db.expire_all()
+        return {"status": "success", "message": "Project member '{project_member_id}' deleted successfully."}
+
+    except Exception as e :
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")

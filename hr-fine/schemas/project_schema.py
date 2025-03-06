@@ -98,3 +98,15 @@ class ProjectAllDetails(BaseModel):
         "from_attributes": True
     }
 
+class ProjectDetailEdit(BaseModel):
+    project_details: ProjectDetailsBase
+    project_bills: ProjectBillBase
+
+class ProjectDurationEdit(BaseModel):
+    project_durations: ProjectDurationBase
+
+class PlanEdit(BaseModel):
+    project_plans: ProjectPlanBase
+
+class ProjectMemberEdit(BaseModel):
+    project_member: ProjectMemberBase
