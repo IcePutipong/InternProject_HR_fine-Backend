@@ -427,7 +427,12 @@ def update_plan(
         project_data: PlanEdit,
         db: Session = Depends(get_session)
 ):
-    project_plan = db.query(ProjectPlan).filter(ProjectPlan.project_id == project_id, ProjectPlan.period_no == project_plan.period_no).first()
+    period_no = project_data.project_plans.period_no if hasattr(project_data.project_plans, 'period_no') else None
+
+    project_plan = db.query(ProjectPlan).filter(
+        ProjectPlan.project_id == project_id,
+        ProjectPlan.period_no == period_no
+    ).first()
 
     if not project_plan:
         last_period = db.query(ProjectPlan).filter(ProjectPlan.project_id == project_id).order_by(ProjectPlan.period_no.desc()).first()
@@ -446,7 +451,6 @@ def update_plan(
         update_model_data(project_plan, project_data.project_plans.model_dump(exclude_unset=True))
 
     try: 
-        update_model_data(project_plan, project_data.project_plans.model_dump(exclude_unset=True))
         db.commit()
         db.refresh(project_plan)
 
@@ -458,10 +462,10 @@ def update_plan(
             }
         }
 
-
-    except Exception as e :
+    except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to update project: {str(e)}")
+
 
 def update_member(
         project_member_id: int,
