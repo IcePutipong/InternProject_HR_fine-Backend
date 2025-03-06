@@ -11,7 +11,8 @@ from database.db import get_session
 from models import auth_model
 from models.auth_model import RefreshToken, Users
 from schemas import auth_schema
-from services.email_sending import send_user_registration_email
+from services.email_sending import send_reset_password_email, send_user_registration_email
+from schemas.auth_schema import ResetPasswordRequest
 
 load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -192,6 +193,25 @@ def change_temporary_password(emp_id: str, new_password: str, session: Session =
     session.refresh(user)
 
     return {"message": "Password reset successfully"}
+
+def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_session)):
+    user = db.query(Users).filter(Users.email == request.email).first()
+
+    if not user: 
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    new_password = generate_random_password()
+    hashed_password = get_hashed_password(new_password)
+
+    user.password = hashed_password
+    user.reset_status = False
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    send_reset_password_email(user.email, new_password)
+    return {"message": "Password has been reset. Please check your email for the new password."}
+
 
 def access_refresh_token(refresh_token: str, db: Session = Depends(get_session)):
     try:

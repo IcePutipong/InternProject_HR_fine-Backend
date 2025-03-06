@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from utils.jwt_bearer import JWTBearer, decode_jwt
 from database.db import get_session
-from schemas.auth_schema import UserLogin, UserRegister, ChangePassword
+from schemas.auth_schema import ResetPasswordRequest, UserLogin, UserRegister, ChangePassword
 from services import auth_service
 
 from models.user_model import AddressInfo, DeductionInfo, HiringInfo, PaymentInfo,  PersonalInfo, RegistrationAddress
@@ -54,6 +54,10 @@ def change_temp_password_endpoint(emp_id: str, new_password: str, session: Sessi
 @router.post("/auth/refresh-token", tags=["Auth"])
 def refresh_token_endpoint(refresh_token: str, session: Session= Depends(get_session)):
     return auth_service.access_refresh_token(refresh_token, session)
+
+@router.post("/auth/reset-token", tags=["Auth"])
+def reset_password_endpoint(request: ResetPasswordRequest, db: Session = Depends(get_session)):
+    return auth_service.reset_password(request, db)
 
 ####User SERVICE
 @router.post("/employee/submit-all-info", dependencies=[Depends(JWTBearer())], tags=["Employee"])

@@ -6,11 +6,10 @@ from typing import Union, Any
 from dotenv import load_dotenv
 
 from models import auth_model
-
-
-
+from models.auth_model import Users  
 
 load_dotenv()
+reset_status = Users.reset_status
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 REFRESH_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
@@ -32,7 +31,7 @@ def create_access_token(subject: Union[str, Any], emp_id: str, expires_delta: in
     else:
         expires_delta = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expires_delta, "sub": str(subject), "emp_id": emp_id}
+    to_encode = {"exp": expires_delta, "sub": str(subject), "emp_id": emp_id, "reset_status": reset_status}
     encode_jwt = jwt.encode(to_encode, JWT_SECRET_KEY, ALGORITHM)
 
     return encode_jwt
@@ -43,7 +42,7 @@ def create_refresh_token(subject: Union[str, Any], emp_id: str, expires_delta: i
     else:
         expires_delta = datetime.now(timezone.utc) + timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expires_delta, "sub": str(subject), "emp_id": emp_id}
+    to_encode = {"exp": expires_delta, "sub": str(subject), "emp_id": emp_id, "reset_status": reset_status}
     encode_jwt = jwt.encode(to_encode, JWT_REFRESH_SECRET_KEY, ALGORITHM)
 
     return encode_jwt
