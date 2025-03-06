@@ -12,7 +12,7 @@ from models.user_model import HiringInfo, PersonalInfo, Position
 
 from services.user_service import update_model_data
 
-from schemas.project_schema import GenerateProjectCode, PlanEdit, ProjectAllDetails, ProjectAssigned, ProjectBillBase, ProjectDetailEdit, ProjectDetailsBase, ProjectDurationBase, ProjectDurationEdit, ProjectMemberBase, ProjectMemberEdit, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
+from schemas.project_schema import FetchProjectMember, GenerateProjectCode, PlanEdit, ProjectAllDetails, ProjectAssigned, ProjectBillBase, ProjectDetailEdit, ProjectDetailsBase, ProjectDurationBase, ProjectDurationEdit, ProjectMemberBase, ProjectMemberEdit, ProjectPlanBase, SubmitallProjectData, ProjectDashboardinfo
 from schemas.optional_schema import AddProjectType
 
 from utils.jwt_bearer import JWTBearer, decode_jwt
@@ -291,7 +291,7 @@ def get_project_details_by_id(db: Session, project_id: int) -> ProjectAllDetails
         project_duration=ProjectDurationBase(**project.project_duration.__dict__) if project.project_duration else None,
         project_bills=ProjectBillBase(**project.project_bill.__dict__) if project.project_plan else None,
         project_plan=[ProjectPlanBase(**plan.__dict__) for plan in project.project_plan] if project.project_plan else [],
-        project_member=[ProjectMemberBase(**member.__dict__) for member in project.project_members] if project.project_members else [],
+        project_member=[FetchProjectMember(**member.__dict__) for member in project.project_members] if project.project_members else [],
     )
 
 def fetch_managers(db: Session = Depends(get_session)):

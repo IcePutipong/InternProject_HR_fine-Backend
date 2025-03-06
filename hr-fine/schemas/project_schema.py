@@ -41,6 +41,11 @@ class ProjectMemberBase(BaseModel):
     member_id: str
     assigned_detail: str
 
+class FetchProjectMember(BaseModel):
+    project_member_id: int
+    member_id: str
+    assigned_detail: str
+
 class SubmitProjectMember(BaseModel):
     project_member: List[ProjectMemberBase]
 
@@ -92,7 +97,7 @@ class ProjectAllDetails(BaseModel):
     project_duration: ProjectDurationBase
     project_bills: ProjectBillBase
     project_plan: List[ProjectPlanBase]
-    project_member: List[ProjectMemberBase]
+    project_member: List[FetchProjectMember]
 
     model_config = {
         "from_attributes": True

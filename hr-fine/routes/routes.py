@@ -255,6 +255,7 @@ def edit_plan(
 ): 
     return update_plan(project_id,request, db)
 
+
 @router.put("/edit-member/{project_member_id}", dependencies=[Depends(JWTBearer())], tags=["Project"])
 def edit_member(
     request: ProjectMemberEdit,
