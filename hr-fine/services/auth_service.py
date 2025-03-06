@@ -116,8 +116,8 @@ def login_user(request: auth_schema.UserLogin, db: Session=Depends(get_session))
             detail="Incorrect Password."
         )
     
-    access = create_access_token(user.id, emp_id=user.emp_id)
-    refresh = create_refresh_token(user.id, emp_id=user.emp_id)
+    access = create_access_token(user.id, emp_id=user.emp_id, db=db)
+    refresh = create_refresh_token(user.id, emp_id=user.emp_id, db=db)
 
     token_db = auth_model.RefreshToken(user_id=user.id, access_token=access, refresh_token=refresh, status=True)
     db.add(token_db)
