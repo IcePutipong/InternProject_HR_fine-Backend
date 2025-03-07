@@ -22,3 +22,7 @@ class ChangePassword(BaseModel):
 
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
+
+class ChangeTempPassRequest(BaseModel):
+    emp_id: str
+    new_password: str

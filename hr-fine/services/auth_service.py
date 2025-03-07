@@ -12,7 +12,7 @@ from models import auth_model
 from models.auth_model import RefreshToken, Users
 from schemas import auth_schema
 from services.email_sending import send_reset_password_email, send_user_registration_email
-from schemas.auth_schema import ResetPasswordRequest
+from schemas.auth_schema import ChangeTempPassRequest, ResetPasswordRequest
 
 load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
@@ -176,8 +176,8 @@ def change_password(emp_id: str, request: auth_schema.ChangePassword, db: Sessio
 
     return {"message": "Password changed Successfully."}
 
-def change_temporary_password(emp_id: str, new_password: str, session: Session = Depends(get_session)):
-    user = session.query(auth_model.Users).filter(Users.emp_id == emp_id).first()
+def change_temporary_password(request: ChangeTempPassRequest, session: Session = Depends(get_session)):
+    user = session.query(auth_model.Users).filter(Users.emp_id == request.emp_id).first()
 
     if not user:
         raise HTTPException(status_code=404, detail="User not Found.")
@@ -185,7 +185,7 @@ def change_temporary_password(emp_id: str, new_password: str, session: Session =
     if user.reset_status is True:
         raise HTTPException(status_code=403, detail="User already change temporary Password.")
     
-    hash_password = get_hashed_password(new_password)
+    hash_password = get_hashed_password(request.new_password)
     user.password = hash_password
     user.reset_status = True
     session.add(user)
